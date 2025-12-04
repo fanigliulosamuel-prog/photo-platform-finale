@@ -10,8 +10,11 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState(''); // NUOVO campo
+  const [city, setCity] = useState(''); // NUOVO campo
+  
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false); // Per cambiare tra Login e Registrazione
+  const [isSignUp, setIsSignUp] = useState(false); 
 
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault();
@@ -20,12 +23,32 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         // --- REGISTRAZIONE ---
-        const { error } = await supabase.auth.signUp({
+        if (!username || !city) throw new Error("Per registrarti devi inserire Username e Città.");
+
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
+
         if (error) throw error;
-        alert("Registrazione completata! Controlla la tua email per confermare (o accedi se Supabase è impostato senza conferma).");
+        
+        // --- SECONDA FASE: CREAZIONE PROFILO AUTOMATICA ---
+        if (data.user) {
+            const { error: profileError } = await supabase.from('profiles').insert([
+                {
+                    id: data.user.id, // L'ID deve corrispondere all'utente appena creato
+                    username: username,
+                    city: city,
+                    // avatar_url e bio verranno aggiunti dopo in settings
+                }
+            ]);
+            
+            if (profileError) throw profileError;
+        }
+
+        alert("Registrazione completata! Puoi accedere subito.");
+        router.push('/dashboard'); // Porta direttamente alla dashboard dopo la creazione del profilo
+        
       } else {
         // --- LOGIN ---
         const { error } = await supabase.auth.signInWithPassword({
@@ -33,10 +56,10 @@ export default function LoginPage() {
           password,
         });
         if (error) throw error;
-        router.push('/dashboard'); // Porta alla dashboard se login ok
+        router.push('/dashboard'); 
       }
     } catch (error: any) {
-      alert(error.message || "Errore durante l'autenticazione");
+      alert("Errore: " + (error.message || "Errore durante l'autenticazione"));
     } finally {
       setLoading(false);
     }
@@ -61,35 +84,36 @@ export default function LoginPage() {
           {isSignUp ? "Unisciti a Noi" : "Bentornato"}
         </h2>
         <p className="text-indigo-200 text-center mb-8">
-          {isSignUp ? "Crea il tuo portfolio oggi stesso." : "Accedi per gestire i tuoi scatti."}
+          {isSignUp ? "Crea il tuo profilo e accedi subito." : "Accedi per gestire i tuoi scatti."}
         </p>
 
         {/* Form */}
         <form onSubmit={handleAuth} className="space-y-5">
           
+          {/* Campi Email e Password */}
           <div>
             <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Email</label>
-            <input 
-              type="email" 
-              placeholder="nome@esempio.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 focus:bg-black/40 outline-none transition"
-              required
-            />
+            <input type="email" placeholder="nome@esempio.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 outline-none transition" required/>
           </div>
-
           <div>
             <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Password</label>
-            <input 
-              type="password" 
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 focus:bg-black/40 outline-none transition"
-              required
-            />
+            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 outline-none transition" required/>
           </div>
+          
+          {/* CAMPI EXTRA PER LA REGISTRAZIONE */}
+          {isSignUp && (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Username / Nome d'Arte</label>
+                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 outline-none transition" required={isSignUp}/>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Città (per la Mappa)</label>
+                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 outline-none transition" required={isSignUp}/>
+              </div>
+            </>
+          )}
+
 
           <button 
             disabled={loading}
@@ -117,7 +141,7 @@ export default function LoginPage() {
           </Link>
         </div>
         
-        {/* Link Legali nel Footer (NUOVO) */}
+        {/* Link Legali nel Footer */}
         <div className="mt-8 pt-4 border-t border-white/10 text-center text-xs text-gray-500 space-x-4">
           <Link href="/legal/privacy" className="hover:text-white transition">Privacy Policy</Link>
           <Link href="/legal/terms" className="hover:text-white transition">Termini d'Uso</Link>
