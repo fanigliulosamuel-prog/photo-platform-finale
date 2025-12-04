@@ -27,7 +27,7 @@ export default function Dashboard() {
   const totalLikes = userPhotos.reduce((acc, photo) => acc + (photo.likes || 0), 0);
   const totalPhotos = userPhotos.length;
   
-  const [isAuthReady, setIsAuthReady] = useState(false); // Nuovo stato per l'autenticazione
+  const [isAuthReady, setIsAuthReady] = useState(false); 
 
   useEffect(() => {
     async function fetchUserData() {
@@ -56,7 +56,7 @@ export default function Dashboard() {
           .select('id, url, likes')
           .eq('author_name', profileData.username)
           .order('created_at', { ascending: false })
-          .limit(3); // Prendiamo solo le ultime 3
+          .limit(3); 
 
         setUserPhotos(photosData || []);
       }
@@ -68,10 +68,8 @@ export default function Dashboard() {
     fetchUserData();
   }, [router]);
   
-  // Se non è pronto, mostra caricamento
   if (loading && !isAuthReady) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Caricamento Dashboard...</div>;
   if (!profile) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Completa il tuo profilo in Impostazioni.</div>;
-
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white relative overflow-hidden">
@@ -86,7 +84,6 @@ export default function Dashboard() {
         
         {/* --- SIDEBAR (Menu Laterale) --- */}
         <aside className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 hidden md:flex flex-col p-6 h-full">
-          {/* ... Codice Sidebar invariato ... */}
           <h2 className="text-2xl font-bold text-white mb-10 tracking-tight">
             Photo Platform
           </h2>
@@ -145,8 +142,7 @@ export default function Dashboard() {
           {/* Intestazione DINAMICA */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
             <div>
-              {/* NOME UTENTE INVECE DI "CREATIVO" */}
-              <h1 className="text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato, {profile.username || "Creativo"}</h1>
+              <h1 className="text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato, {profile.username}</h1>
               <p className="text-indigo-200">Il tuo hub personale per gestire l'arte.</p>
             </div>
             
@@ -157,29 +153,21 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          {/* Card Statistiche DINAMICHE */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          {/* Card Statistiche (SOLO Visualizzazioni e Apprezzamenti) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             
-            {/* Visualizzazioni (Placeholder) */}
+            {/* 1. Statistiche Foto Caricate */}
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 hover:border-indigo-500/30 transition hover:bg-white/10 group">
               <h3 className="text-indigo-200 text-sm mb-2 uppercase tracking-wider font-bold">Foto Caricate</h3>
-              {/* Statistica Reale: Numero di foto dell'utente */}
               <p className="text-4xl font-bold text-white group-hover:text-indigo-400 transition">{totalPhotos}</p>
               <p className="text-gray-400 text-xs mt-2">Aggiornato in tempo reale</p>
             </div>
 
-            {/* Apprezzamenti (Reale) */}
+            {/* 2. Apprezzamenti (Like Totali) */}
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 hover:border-purple-500/30 transition hover:bg-white/10 group">
               <h3 className="text-indigo-200 text-sm mb-2 uppercase tracking-wider font-bold">Like Totali</h3>
               <p className="text-4xl font-bold text-white group-hover:text-purple-400 transition">{totalLikes}</p>
-              <p className="text-green-400 text-xs mt-2">Conteggio Like sui tuoi scatti</p>
-            </div>
-
-            {/* Guadagni (Placeholder) */}
-            <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 hover:border-yellow-500/30 transition hover:bg-white/10 group">
-              <h3 className="text-indigo-200 text-sm mb-2 uppercase tracking-wider font-bold">Guadagni</h3>
-              <p className="text-4xl font-bold text-white group-hover:text-yellow-400 transition">€ 120,00</p>
-              <p className="text-gray-400 text-xs mt-2">Dati E-commerce simulati</p>
+              <p className="text-gray-400 text-xs mt-2">Conteggio Like sui tuoi scatti</p>
             </div>
 
           </div>
