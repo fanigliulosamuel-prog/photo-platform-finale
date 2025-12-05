@@ -22,18 +22,15 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userPhotos, setUserPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Stato per il menu mobile
+  const [isMenuOpen, setIsMenuOpen] = useState(false); 
   
-  // Calcola statistiche reali (basate sulle foto dell'utente)
   const totalLikes = userPhotos.reduce((acc, photo) => acc + (photo.likes || 0), 0);
   const totalPhotos = userPhotos.length;
   
   const [isAuthReady, setIsAuthReady] = useState(false); 
 
-  // Caricamento Dati Iniziale
   useEffect(() => {
     async function fetchUserData() {
-      // 1. Controlla l'utente loggato
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -41,7 +38,6 @@ export default function Dashboard() {
         return;
       }
       
-      // 2. Prendi il Profilo (Username, Città, Avatar)
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
@@ -51,13 +47,11 @@ export default function Dashboard() {
       if (profileData) {
         setProfile(profileData as Profile);
         
-        // 3. Prendi le FOTO caricate dall'utente
         const { data: photosData } = await supabase
           .from('photos')
           .select('id, url, likes')
           .eq('author_name', profileData.username)
           .order('created_at', { ascending: false });
-          // Nota: Ho rimosso il limite per farti vedere tutte le tue foto
 
         setUserPhotos(photosData || []);
       }
@@ -69,18 +63,15 @@ export default function Dashboard() {
     fetchUserData();
   }, [router]);
   
-  // FUNZIONE ELIMINA FOTO
   async function handleDeletePhoto(photoId: number, photoUrl: string) {
     if (!confirm('Sei sicuro di voler eliminare questo scatto? L\'azione è irreversibile.')) {
       return;
     }
 
-    // Cancelliamo l'anteprima subito per dare feedback veloce all'utente
     const originalPhotos = [...userPhotos];
     setUserPhotos(userPhotos.filter(p => p.id !== photoId));
 
     try {
-      // 1. Cancella la riga dal database
       const { error: dbError } = await supabase
         .from('photos')
         .delete()
@@ -88,8 +79,6 @@ export default function Dashboard() {
 
       if (dbError) throw dbError;
       
-      // 2. Cancella il file fisico dallo Storage
-      // Estraiamo il nome del file dall'URL (tutto quello dopo l'ultimo slash)
       const fileName = photoUrl.split('/').pop();
       if (fileName) {
          const { error: storageError } = await supabase.storage.from('uploads').remove([fileName]);
@@ -99,7 +88,6 @@ export default function Dashboard() {
       alert("Foto eliminata con successo!");
 
     } catch (error) {
-      // Se qualcosa va storto, rimettiamo la foto nella lista
       setUserPhotos(originalPhotos);
       alert("Errore nell'eliminazione. Riprova.");
       console.error(error);
@@ -109,7 +97,6 @@ export default function Dashboard() {
 
   if (loading && !isAuthReady) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Caricamento Dashboard...</div>;
   
-  // Se il profilo non è stato completato
   if (!profile) return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white gap-4">
         <p>Profilo incompleto.</p>
@@ -120,19 +107,18 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white relative overflow-hidden">
       
-      {/* --- TEXTURE SFONDO --- */}
+      {/* Texture Sfondo */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* --- LUCI AMBIENTALI --- */}
+      {/* Luci Ambientali */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* --- CONTENUTO (z-10 per stare sopra lo sfondo) --- */}
       <div className="flex w-full relative z-10 h-screen">
         
-        {/* --- SIDEBAR (Menu Laterale) --- */}
+        {/* SIDEBAR */}
         <aside className={`fixed md:relative w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col p-6 h-full transition-transform duration-300 z-50
           ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
           
@@ -140,19 +126,15 @@ export default function Dashboard() {
             Photo Platform
           </h2>
           
-          {/* Tasto chiudi menu (solo mobile) */}
           <button onClick={() => setIsMenuOpen(false)} className="absolute top-4 right-4 md:hidden text-gray-400 hover:text-white text-xl">
             ✕
           </button>
 
           <nav className="flex flex-col gap-3 overflow-y-auto custom-scrollbar flex-1">
-            
             <Link href="/dashboard" className="flex items-center gap-3 p-3 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>
               🏠 Dashboard
             </Link>
-            
             <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
-            
             <Link href="/explore" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               📷 Galleria Pubblica
             </Link>
@@ -165,9 +147,7 @@ export default function Dashboard() {
             <Link href="/blog" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               📘 Blog Storie
             </Link>
-
             <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
-
             <Link href="/upload" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               📤 Carica Foto
             </Link>
@@ -177,9 +157,7 @@ export default function Dashboard() {
             <Link href="/private" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               🔒 Area Clienti
             </Link>
-
             <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Account</p>
-
             <Link href="/settings" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               ⚙️ Impostazioni
             </Link>
@@ -192,27 +170,19 @@ export default function Dashboard() {
           </div>
         </aside>
         
-        {/* Overlay Mobile (Sfondo scuro quando il menu è aperto) */}
         {isMenuOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
-
-        {/* --- AREA PRINCIPALE --- */}
+        {/* AREA PRINCIPALE */}
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           
-          {/* Intestazione */}
           <div className="flex justify-between items-center mb-10">
-            
-            {/* Tasto Hamburger Mobile */}
             <button onClick={() => setIsMenuOpen(true)} className="text-white md:hidden text-3xl mr-4">
               ☰
             </button>
-            
             <div>
               <h1 className="text-3xl md:text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato, {profile.username}</h1>
               <p className="text-indigo-200">Il tuo hub personale per gestire l'arte.</p>
             </div>
-            
-            {/* BOTTONE UPLOAD RAPIDO (Nascosto su mobile piccolo per spazio) */}
             <Link href="/upload" className="hidden sm:block">
               <button className="bg-white text-indigo-950 px-8 py-3 rounded-full font-bold hover:scale-105 transition shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                 + Nuovo Progetto
@@ -220,31 +190,25 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          {/* Card Statistiche */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 hover:border-indigo-500/30 transition hover:bg-white/10 group">
               <h3 className="text-indigo-200 text-sm mb-2 uppercase tracking-wider font-bold">Foto Caricate</h3>
               <p className="text-4xl font-bold text-white group-hover:text-indigo-400 transition">{totalPhotos}</p>
               <p className="text-gray-400 text-xs mt-2">Aggiornato in tempo reale</p>
             </div>
-
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 hover:border-purple-500/30 transition hover:bg-white/10 group">
               <h3 className="text-indigo-200 text-sm mb-2 uppercase tracking-wider font-bold">Like Totali</h3>
               <p className="text-4xl font-bold text-white group-hover:text-purple-400 transition">{totalLikes}</p>
               <p className="text-gray-400 text-xs mt-2">Conteggio Like sui tuoi scatti</p>
             </div>
-
           </div>
 
-          {/* Sezione Progetti Recenti (Con Tasto Elimina) */}
           <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
-            I tuoi ultimi scatti
+            I tuoi scatti (Gestione)
           </h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             
-            {/* Shortcut Upload */}
             <Link href="/upload" className="aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center text-gray-400 hover:border-indigo-500 hover:text-white hover:bg-white/10 transition cursor-pointer group">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition group-hover:bg-indigo-600 shadow-lg">
                   <span className="text-3xl">+</span>
@@ -252,22 +216,24 @@ export default function Dashboard() {
                 <span className="font-medium tracking-wide">Carica Foto</span>
             </Link>
             
-            {/* Foto dell'utente (Dinamiche) */}
             {userPhotos.map(photo => (
                 <div key={photo.id} className="aspect-square bg-slate-800 rounded-3xl overflow-hidden relative group border border-white/5 shadow-xl">
                   
-                  <img src={photo.url} className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" />
+                  <img src={photo.url} className="w-full h-full object-cover" />
                   
-                  {/* Overlay Azioni */}
-                  <div className="absolute inset-0 bg-indigo-950/90 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center gap-3 z-10 backdrop-blur-sm">
+                  {/* MODIFICA PER MOBILE:
+                      Su mobile (default) -> opacity-100 (sempre visibile)
+                      Su PC (md:) -> opacity-0 (invisibile) e group-hover:opacity-100
+                  */}
+                  <div className="absolute inset-0 bg-indigo-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300
+                                  opacity-100 md:opacity-0 md:group-hover:opacity-100">
                       
                       <Link href={`/photo/${photo.id}`}>
-                        <button className="text-white font-bold border border-white/30 bg-white/10 px-6 py-2 rounded-full hover:bg-white hover:text-black transition cursor-pointer">
+                        <button className="text-white font-bold border border-white/30 bg-white/10 px-5 py-2 rounded-full hover:bg-white hover:text-black transition cursor-pointer text-sm">
                             Visualizza
                         </button>
                       </Link>
                       
-                      {/* TASTO ELIMINA */}
                       <button 
                         onClick={(e) => {
                            e.preventDefault(); 
@@ -282,7 +248,6 @@ export default function Dashboard() {
                 </div>
             ))}
             
-            {/* Se non ci sono foto */}
             {userPhotos.length === 0 && (
                 <div className="col-span-2 aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-white/10 flex items-center justify-center p-4 text-center">
                     <p className="text-gray-400 text-sm">Non hai ancora caricato scatti.<br/>Inizia subito a creare il tuo portfolio!</p>
