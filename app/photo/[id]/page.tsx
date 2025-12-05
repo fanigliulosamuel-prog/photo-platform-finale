@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
+// Definiamo i tipi di dati
 type Photo = {
   id: number;
   title: string;
@@ -34,7 +35,7 @@ export default function PhotoDetailPage() {
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [commentAuthor, setCommentAuthor] = useState(""); 
+  const [commentAuthor, setCommentAuthor] = useState("");
   
   const [loading, setLoading] = useState(true);
   const [hasVoted, setHasVoted] = useState(false); 
@@ -46,27 +47,11 @@ export default function PhotoDetailPage() {
       if (!id) return;
       const photoId = parseInt(id as string);
       
+      // 1. Utente loggato
       const { data: { user } } = await supabase.auth.getUser();
       setUserId(user ? user.id : null);
 
-      if (user) {
-        const { data: myProfile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', user.id)
-            .single();
-        if (myProfile) setCurrentUsername(myProfile.username);
-
-        const { data: voteData } = await supabase
-          .from('votes')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('photo_id', photoId)
-          .maybeSingle();
-
-        if (voteData) setHasVoted(true);
-      }
-
+      // 2. Carica Foto
       const { data: photoData } = await supabase
         .from('photos')
         .select('*')
@@ -75,6 +60,28 @@ export default function PhotoDetailPage() {
 
       if (photoData) setPhoto(photoData as Photo);
 
+      // 3. CONTROLLO VOTO ESISTENTE (Più robusto)
+      if (user) {
+        // Usa .maybeSingle() per evitare errori se non c'è voto
+        const { data: voteData } = await supabase
+          .from('votes')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('photo_id', photoId)
+          .maybeSingle();
+
+        if (voteData) {
+            setHasVoted(true);
+        }
+      }
+
+      // Prendi username per le notifiche
+      if (user) {
+        const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+        if (myProfile) setCurrentUsername(myProfile.username);
+      }
+
+      // 4. Carica Commenti
       const { data: commentsData } = await supabase
         .from('comments')
         .select('*')
@@ -89,15 +96,11 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
+  // Notifiche
   async function sendNotification(type: 'like' | 'comment', message: string) {
     if (!photo) return;
-
-    const { data: ownerProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', photo.author_name)
-        .single();
-
+    const { data: ownerProfile } = await supabase.from('profiles').select('id').eq('username', photo.author_name).single();
+    
     if (ownerProfile && ownerProfile.id !== userId) {
         await supabase.from('notifications').insert([{
             user_id: ownerProfile.id, 
@@ -109,57 +112,58 @@ export default function PhotoDetailPage() {
     }
   }
 
-  // --- NUOVA GESTIONE LIKE ATOMICA ---
+  // --- GESTIONE LIKE "AUTO-CORRECT" ---
   async function handleLike() {
     if (!photo || !userId || hasVoted) return; 
 
-    const photoId = photo.id;
+    // 1. UI Ottimistica: Aumentiamo subito per velocità percepita
+    setHasVoted(true); 
+    setPhoto({ ...photo, likes: (photo.likes || 0) + 1 });
 
     try {
-      // Usiamo la funzione SQL 'vote_photo' che fa tutto insieme:
-      // 1. Controlla se hai votato
-      // 2. Inserisce il voto
-      // 3. Aumenta il contatore
-      // Ritorna TRUE se ha funzionato, FALSE se avevi già votato
+      // 2. Chiama la funzione SQL che fa tutto (inserisce e aggiorna)
       const { data: success, error } = await supabase.rpc('vote_photo', { 
-        photo_id_input: photoId, 
+        photo_id_input: photo.id, 
         user_id_input: userId 
       });
 
       if (error) throw error;
 
       if (success) {
-        // Se successo, aggiorna UI e manda notifica
-        setPhoto({ ...photo, likes: (photo.likes || 0) + 1 });
-        setHasVoted(true);
+        // Tutto ok, manda notifica
         await sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
       } else {
-        // Se ritorna false, il database dice che il voto c'era già
+        // IL VOTO ESISTEVA GIÀ! (Il caso del tuo problema)
+        console.log("Voto già presente, sincronizzazione...");
+        
+        // Scarica il numero VERO di like dal server per correggere eventuali errori visuali
+        const { data: realPhoto } = await supabase.from('photos').select('likes').eq('id', photo.id).single();
+        if (realPhoto) {
+            setPhoto(prev => prev ? { ...prev, likes: realPhoto.likes } : null);
+        }
+        // Forza il bottone su "Votato"
         setHasVoted(true);
-        alert("Il tuo voto era già registrato!");
       }
 
     } catch (error: any) {
         console.error("Errore Like:", error);
-        alert("Impossibile registrare il voto. Riprova.");
+        // Se c'è un errore vero di rete, annulla l'ottimismo
+        setHasVoted(false);
+        setPhoto({ ...photo, likes: (photo.likes || 0) }); 
+        alert("Errore di connessione. Riprova.");
     }
   }
 
+  // --- RESTO DEL CODICE ---
   async function handlePostComment(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment || !commentAuthor || !photo) return alert("Scrivi un nome e un commento!");
-
-    const { error } = await supabase
-      .from('comments')
-      .insert([{ text: newComment, author: commentAuthor, photo_id: photo.id }]);
-
+    const { error } = await supabase.from('comments').insert([{ text: newComment, author: commentAuthor, photo_id: photo.id }]);
     if (!error) {
       await sendNotification('comment', `ha commentato: "${newComment.substring(0, 20)}..."`);
       alert("Commento pubblicato!");
       window.location.reload(); 
-    } else {
-      alert("Errore nell'invio del commento");
-    }
+    } else { alert("Errore nell'invio del commento"); }
   }
   
   const handlePurchase = () => {
@@ -172,6 +176,8 @@ export default function PhotoDetailPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white relative overflow-y-auto">
+      
+      {/* Sfondo */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
 
       <nav className="relative z-20 p-8 flex justify-between items-center max-w-7xl mx-auto w-full">
@@ -180,6 +186,8 @@ export default function PhotoDetailPage() {
       </nav>
 
       <div className="relative z-10 flex flex-col md:flex-row max-w-7xl mx-auto w-full gap-10 p-6 pb-20 justify-center items-start">
+        
+        {/* FOTO */}
         <div className="flex-1 w-full relative sticky top-10">
            <div className="relative bg-slate-900/50 rounded-2xl border border-white/10 p-1 backdrop-blur-sm shadow-2xl">
             <img src={photo.url} alt={photo.title} className="w-full h-auto max-h-[80vh] object-contain rounded-xl" />
@@ -197,23 +205,21 @@ export default function PhotoDetailPage() {
           </div>
         </div>
 
+        {/* INFO & COMMENTI */}
         <div className="w-full md:w-96 flex flex-col gap-6">
           <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-xl">
             <h1 className="text-3xl font-bold mb-2 text-white">{photo.title}</h1>
             <p className="text-indigo-200 text-sm mb-4">by <Link href={`/profile/${photo.author_name}`} className="font-bold text-white hover:text-purple-400 hover:underline transition cursor-pointer">{photo.author_name}</Link></p>
-            
             <div className="flex justify-between items-center bg-indigo-900/30 p-4 rounded-xl border border-white/5">
                 <span className="text-sm font-bold text-indigo-300">VOTI COMMUNITY</span>
                 <span className="text-2xl font-bold text-white">{photo.likes || 0}</span>
             </div>
-
             {photo.price > 0 && (
                 <div className="mt-6 border-t border-white/10 pt-4">
                     <div className="flex justify-between items-center mb-3"><span className="text-indigo-200 font-bold uppercase text-xs tracking-wider">Acquista Licenza</span><span className="text-3xl font-bold text-white">€ {photo.price.toFixed(2)}</span></div>
                     <button onClick={handlePurchase} className="w-full py-3 bg-green-500 text-slate-900 font-bold rounded-xl hover:bg-green-400 transition transform flex items-center justify-center gap-2 shadow-lg">Acquista 🛍️</button>
                 </div>
             )}
-
             <button 
               onClick={handleLike}
               disabled={!userId || hasVoted} 
@@ -223,7 +229,6 @@ export default function PhotoDetailPage() {
             </button>
             {!userId && <p className="text-xs text-center text-gray-500 mt-2">Devi essere registrato per votare. <Link href="/login" className="text-white hover:underline">Accedi</Link></p>}
           </div>
-
           <div className="bg-black/20 p-6 rounded-3xl border border-white/5">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">💬 Critiche & Pareri <span className="bg-white/10 text-xs px-2 py-1 rounded-full">{comments.length}</span></h3>
             <div className="flex flex-col gap-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
