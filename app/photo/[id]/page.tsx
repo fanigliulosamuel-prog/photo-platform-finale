@@ -38,24 +38,47 @@ export default function PhotoDetailPage() {
   const [commentAuthor, setCommentAuthor] = useState("");
   
   const [loading, setLoading] = useState(true);
+  const [hasVoted, setHasVoted] = useState(false); // NUOVO: se l'utente ha votato
+  const [userId, setUserId] = useState<string | null>(null); // ID utente loggato
 
-  // Carica Foto e Commenti
+  // Carica Dati e Stato Voto
   useEffect(() => {
     async function fetchData() {
       if (!id) return;
       
+      const photoId = parseInt(id as string);
+      
+      // 1. Ottieni l'utente loggato
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user ? user.id : null);
+
+      // 2. Prendi la foto
       const { data: photoData } = await supabase
         .from('photos')
         .select('*')
-        .eq('id', id)
+        .eq('id', photoId)
         .single();
 
       if (photoData) setPhoto(photoData as Photo);
 
+      // 3. Controlla se l'utente ha già votato (solo se loggato)
+      if (user) {
+        const { count } = await supabase
+          .from('votes')
+          .select('id', { count: 'exact' })
+          .eq('user_id', user.id)
+          .eq('photo_id', photoId);
+
+        if (count && count > 0) {
+          setHasVoted(true);
+        }
+      }
+
+      // 4. Prendi i commenti
       const { data: commentsData } = await supabase
         .from('comments')
         .select('*')
-        .eq('photo_id', id)
+        .eq('photo_id', photoId)
         .order('created_at', { ascending: false });
 
       if (commentsData) setComments(commentsData);
@@ -66,17 +89,42 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
-  // Gestione Like
+  // Gestione Like Unico
   async function handleLike() {
-    if (!photo) return;
-    const newLikes = (photo.likes || 0) + 1;
+    if (!photo || !userId || hasVoted) return; // Blocco se non loggato o ha già votato
 
-    const { error } = await supabase
-      .from('photos')
-      .update({ likes: newLikes })
-      .eq('id', photo.id);
+    const photoId = photo.id;
 
-    if (!error) setPhoto({ ...photo, likes: newLikes });
+    try {
+      // 1. Registra il voto nella tabella 'votes'
+      const { error: voteError } = await supabase.from('votes').insert([
+        { user_id: userId, photo_id: photoId }
+      ]);
+      if (voteError) throw voteError;
+
+      // 2. Aggiorna il contatore 'likes' nella tabella 'photos'
+      const newLikes = (photo.likes || 0) + 1;
+      const { error: updateError } = await supabase
+        .from('photos')
+        .update({ likes: newLikes })
+        .eq('id', photoId);
+
+      if (updateError) throw updateError;
+      
+      // 3. Aggiorna lo stato locale
+      setPhoto({ ...photo, likes: newLikes });
+      setHasVoted(true);
+
+    } catch (error: any) {
+        // Se l'errore è dovuto alla violazione dell'unicità (doppio voto)
+        if (error.code === '23505') { 
+            alert("Hai già votato questa foto.");
+            setHasVoted(true);
+        } else {
+            alert("Errore nel registrare il voto.");
+            console.error(error);
+        }
+    }
   }
 
   // Gestione Invio Commento
@@ -84,6 +132,7 @@ export default function PhotoDetailPage() {
     e.preventDefault();
     if (!newComment || !commentAuthor || !photo) return alert("Scrivi un nome e un commento!");
 
+    // Logica di invio commento... (invariata)
     const { error } = await supabase
       .from('comments')
       .insert([
@@ -110,6 +159,11 @@ export default function PhotoDetailPage() {
 
   if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Caricamento...</div>;
   if (!photo) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Foto non trovata.</div>;
+
+  const likeButtonText = userId 
+    ? (hasVoted ? "Voto Già Registrato ✅" : "❤️ Lascia un Voto")
+    : "Accedi per Votare";
+
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white relative overflow-y-auto">
@@ -139,7 +193,7 @@ export default function PhotoDetailPage() {
               className="w-full h-auto max-h-[80vh] object-contain rounded-xl" 
             />
             
-            {/* WATERMARK FISSO AGGIUNTO QUI */}
+            {/* WATERMARK FISSO */}
             <div className="absolute bottom-5 right-5 text-white/50 text-sm font-bold bg-black/50 p-2 rounded backdrop-blur-sm">
                 © {photo.author_name} - Photo Platform
             </div>
@@ -211,9 +265,16 @@ export default function PhotoDetailPage() {
 
             <button 
               onClick={handleLike}
-              className="w-full py-3 mt-4 bg-white text-indigo-950 font-bold rounded-xl hover:scale-[1.02] transition transform flex items-center justify-center gap-2"
+              disabled={!userId || hasVoted} // Disabilita se non loggato o ha già votato
+              className={`w-full py-3 mt-4 font-bold rounded-xl transition transform flex items-center justify-center gap-2 
+                ${!userId 
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : hasVoted
+                    ? 'bg-indigo-800 text-indigo-300 cursor-not-allowed'
+                    : 'bg-white text-indigo-950 hover:scale-[1.02] shadow-lg'
+                }`}
             >
-              ❤️ Lascia un Like
+              {likeButtonText}
             </button>
           </div>
 
