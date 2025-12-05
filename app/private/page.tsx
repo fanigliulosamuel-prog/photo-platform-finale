@@ -1,128 +1,186 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 import { Playfair_Display } from 'next/font/google';
 import Link from 'next/link';
 
 const playfair = Playfair_Display({ subsets: ['latin'] });
 
-export default function PrivateGalleryPage() {
-  
-  const [pin, setPin] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
-  const [error, setError] = useState(false);
+type Project = {
+  id: number;
+  name: string;
+  status: string;
+  created_at: string;
+};
 
-  // Simuliamo un album segreto
-  const secretPhotos = [
-    "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
-    "https://images.unsplash.com/photo-1511285560982-1351cdeb9821?w=800&q=80",
-    "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&q=80",
-    "https://images.unsplash.com/photo-1520854221256-17451cc330e7?w=800&q=80",
-    "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=80",
-    "https://images.unsplash.com/photo-1522673607200-1645062cd495?w=800&q=80",
-  ];
+export default function PrivateProjectsPage() {
+  const router = useRouter();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    // PIN segreto di prova: 2025
-    if (pin === "2025") {
-      setUnlocked(true);
-      setError(false);
-    } else {
-      setError(true);
-      setPin(""); // Resetta il campo se sbagli
+  // Caricamento Progetti
+  useEffect(() => {
+    async function fetchProjects() {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push('/login'); // Reindirizza se non loggato
+        return;
+      }
+      setUserId(user.id);
+
+      // Prende SOLO i progetti collegati al tuo ID
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (!error) {
+        setProjects(data || []);
+      }
+      setLoading(false);
     }
-  };
+
+    fetchProjects();
+  }, [router]);
+  
+  // Funzione Aggiungi Progetto
+  async function handleCreateProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newProjectName.trim() || !userId) return;
+
+    setIsCreating(true);
+
+    const { data: newRow, error } = await supabase
+      .from('projects')
+      .insert([
+        { name: newProjectName, status: 'In Corso', user_id: userId }
+      ])
+      .select('*')
+      .single();
+
+    if (!error && newRow) {
+      setProjects([newRow as Project, ...projects]);
+      setNewProjectName("");
+    } else {
+        // Aggiunto log per debug se l'errore persiste
+        console.error("Errore nella creazione del progetto:", error);
+        alert("Errore nella creazione del progetto. Controlla i permessi o la console.");
+    }
+    setIsCreating(false);
+  }
+
+  // Funzione Elimina Progetto
+  async function handleDeleteProject(projectId: number) {
+    // Uso un div personalizzato anziché alert() o confirm() per compatibilità con iFrame
+    if (!window.confirm('Vuoi davvero eliminare questo progetto? L\'azione è irreversibile.')) return;
+    
+    // Aggiorna l'interfaccia subito
+    const originalProjects = projects;
+    setProjects(projects.filter(p => p.id !== projectId));
+
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId);
+
+    if (error) {
+      alert("Errore nell'eliminazione.");
+      setProjects(originalProjects); // Se fallisce, rimetti il progetto
+    }
+  }
+
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white relative overflow-hidden flex flex-col items-center justify-center p-6">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white relative overflow-hidden p-8">
       
       {/* Texture Sfondo */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
+      <div className="absolute top-0 left-0 w-full h-96 bg-indigo-600/10 blur-[100px] pointer-events-none"></div>
 
-      {/* Luci Ambientali */}
-      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-
-      <div className="relative z-10 w-full max-w-5xl mx-auto">
+      <div className="relative z-10 max-w-5xl mx-auto">
         
-        {/* --- STATO 1: BLOCCATO (Lucchetto) --- */}
-        {!unlocked ? (
-          <div className="flex flex-col items-center animate-fade-in-up">
-            
-            <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mb-8 border border-white/20 shadow-[0_0_40px_rgba(99,102,241,0.3)]">
-              <span className="text-4xl">🔒</span>
-            </div>
+        <h1 className={`${playfair.className} text-5xl md:text-7xl font-bold text-white mb-2`}>
+          I Miei Progetti
+        </h1>
+        <p className="text-indigo-200 text-xl mb-10">
+          Il tuo spazio di lavoro privato: bozze, clienti e lavori in corso.
+        </p>
 
-            <h1 className={`${playfair.className} text-4xl md:text-5xl font-bold mb-4 text-center`}>
-              Area Clienti Privata
-            </h1>
-            <p className="text-indigo-200 mb-10 text-center max-w-md">
-              Questa galleria è protetta. Inserisci il codice PIN fornito dal fotografo per visualizzare l'album "Matrimonio Elena & Luca".
-            </p>
-
-            <form onSubmit={handleUnlock} className="flex flex-col items-center gap-4 w-full max-w-xs">
-              <input 
-                type="password" 
-                placeholder="Inserisci PIN (es. 2025)" 
-                className="w-full text-center text-2xl tracking-[0.5em] py-4 bg-black/40 border border-white/20 rounded-2xl focus:border-indigo-500 focus:shadow-[0_0_20px_rgba(99,102,241,0.5)] outline-none transition placeholder:text-sm placeholder:tracking-normal placeholder:text-gray-500"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                maxLength={4}
-              />
-              
-              {error && <p className="text-red-400 text-sm font-bold animate-bounce">PIN Errato. Riprova.</p>}
-
-              <button className="w-full py-4 bg-white text-indigo-950 font-bold rounded-2xl hover:scale-105 transition shadow-lg mt-2">
-                SBLOCCA 🔓
-              </button>
+        {/* Form Creazione Progetto */}
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-xl mb-10">
+            <h3 className="text-xl font-bold mb-4">Nuovo Progetto</h3>
+            <form onSubmit={handleCreateProject} className="flex flex-col sm:flex-row gap-4">
+                <input 
+                    type="text" 
+                    placeholder="Nome progetto (es. Matrimonio Rossi, Servizio Studio)"
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    disabled={isCreating}
+                    className="flex-1 bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 outline-none"
+                />
+                <button 
+                    disabled={isCreating}
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition disabled:opacity-50"
+                >
+                    {isCreating ? 'Creazione...' : 'Crea'}
+                </button>
             </form>
+        </div>
 
-            <Link href="/" className="mt-12 text-gray-500 hover:text-white transition text-sm">
-              ← Torna alla Home
-            </Link>
 
-          </div>
+        {/* Lista Progetti */}
+        <h2 className="text-2xl font-bold mb-6 border-b border-white/10 pb-3">
+            Lista ({projects.length})
+        </h2>
+
+        {loading ? (
+            <p className="text-gray-400 py-10 text-center">Caricamento...</p>
         ) : (
-          
-          /* --- STATO 2: SBLOCCATO (Galleria) --- */
-          <div className="animate-fade-in">
-            <div className="flex justify-between items-end mb-10 border-b border-white/10 pb-6">
-              <div>
-                <p className="text-indigo-300 text-xs font-bold uppercase tracking-widest mb-2">Album Privato</p>
-                <h1 className={`${playfair.className} text-4xl font-bold`}>Matrimonio Elena & Luca</h1>
-              </div>
-              <button onClick={() => setUnlocked(false)} className="text-sm text-gray-400 hover:text-white transition border border-white/10 px-4 py-2 rounded-full">
-                Esci 🔒
-              </button>
-            </div>
+            <div className="space-y-4">
+                {projects.map(project => (
+                    <div key={project.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/5 p-4 rounded-xl border border-white/10 hover:border-purple-500/50 transition">
+                        
+                        <div>
+                            <h3 className="text-xl font-bold text-white">{project.name}</h3>
+                            <p className="text-xs text-gray-400 mt-1">Creato il {new Date(project.created_at).toLocaleDateString()}</p>
+                        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {secretPhotos.map((src, index) => (
-                <div key={index} className="group relative aspect-[3/4] bg-zinc-800 rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition duration-500">
-                  <img src={src} className="w-full h-full object-cover transition duration-700 group-hover:scale-105" />
-                  
-                  {/* Azioni Cliente */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-4">
-                    <button className="bg-white text-black w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition" title="Scarica">
-                      ⬇️
-                    </button>
-                    <button className="bg-white/20 backdrop-blur-md text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/40 transition border border-white/30" title="Aggiungi ai preferiti">
-                      ❤️
-                    </button>
-                  </div>
-                </div>
-              ))}
+                        <div className="flex items-center gap-4 mt-3 sm:mt-0">
+                            <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${
+                                project.status === 'In Corso' ? 'bg-yellow-500/20 text-yellow-300' : 
+                                project.status === 'Consegnato' ? 'bg-green-500/20 text-green-300' :
+                                'bg-gray-500/20 text-gray-300'
+                            }`}>
+                                {project.status}
+                            </span>
+                            
+                            {/* Bottone Elimina */}
+                            <button 
+                                onClick={() => handleDeleteProject(project.id)}
+                                className="text-red-400 text-sm hover:text-red-200 transition"
+                            >
+                                Elimina
+                            </button>
+                        </div>
+                    </div>
+                ))}
+                
+                {projects.length === 0 && (
+                     <div className="text-center py-10 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                        <p className="text-gray-400 text-lg">Nessun progetto attivo. Iniziane uno nuovo!</p>
+                     </div>
+                )}
             </div>
-
-            <div className="mt-16 text-center">
-               <button className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-full shadow-lg transition transform hover:scale-105">
-                 Scarica Tutte le Foto (.zip)
-               </button>
-            </div>
-
-          </div>
         )}
 
       </div>
