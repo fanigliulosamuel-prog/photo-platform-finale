@@ -60,9 +60,12 @@ export default function PhotoDetailPage() {
 
       if (photoData) setPhoto(photoData as Photo);
 
-      // 3. CONTROLLO VOTO ESISTENTE (Più robusto)
+      // 3. Controlla se l'utente ha già votato
       if (user) {
-        // Usa .maybeSingle() per evitare errori se non c'è voto
+        // Prendi username
+        const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+        if (myProfile) setCurrentUsername(myProfile.username);
+
         const { data: voteData } = await supabase
           .from('votes')
           .select('id')
@@ -75,13 +78,7 @@ export default function PhotoDetailPage() {
         }
       }
 
-      // Prendi username per le notifiche
-      if (user) {
-        const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-        if (myProfile) setCurrentUsername(myProfile.username);
-      }
-
-      // 4. Carica Commenti
+      // 4. Commenti
       const { data: commentsData } = await supabase
         .from('comments')
         .select('*')
@@ -112,49 +109,50 @@ export default function PhotoDetailPage() {
     }
   }
 
-  // --- GESTIONE LIKE "AUTO-CORRECT" ---
+  // --- NUOVA GESTIONE LIKE (TOGGLE / INSTAGRAM STYLE) ---
   async function handleLike() {
-    if (!photo || !userId || hasVoted) return; 
+    if (!photo || !userId) return; 
 
-    // 1. UI Ottimistica: Aumentiamo subito per velocità percepita
-    setHasVoted(true); 
-    setPhoto({ ...photo, likes: (photo.likes || 0) + 1 });
+    // Salva lo stato precedente per eventuale rollback (se il server fallisce)
+    const previousLikes = photo.likes;
+    const previousHasVoted = hasVoted;
+
+    // 1. UI Ottimistica: Aggiorna subito lo schermo (sembra istantaneo)
+    if (hasVoted) {
+        // Se aveva votato -> Togli il voto visivamente
+        setPhoto({ ...photo, likes: Math.max(0, (photo.likes || 0) - 1) });
+        setHasVoted(false);
+    } else {
+        // Se non aveva votato -> Aggiungi il voto visivamente
+        setPhoto({ ...photo, likes: (photo.likes || 0) + 1 });
+        setHasVoted(true);
+    }
 
     try {
-      // 2. Chiama la funzione SQL che fa tutto (inserisce e aggiorna)
-      const { data: success, error } = await supabase.rpc('vote_photo', { 
+      // 2. Chiama la funzione SQL 'toggle_vote' che fa il lavoro sporco nel database
+      const { data: action, error } = await supabase.rpc('toggle_vote', { 
         photo_id_input: photo.id, 
         user_id_input: userId 
       });
 
       if (error) throw error;
 
-      if (success) {
-        // Tutto ok, manda notifica
+      // 3. Gestione Notifica (solo se è stato aggiunto)
+      if (action === 'added') {
         await sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
-      } else {
-        // IL VOTO ESISTEVA GIÀ! (Il caso del tuo problema)
-        console.log("Voto già presente, sincronizzazione...");
-        
-        // Scarica il numero VERO di like dal server per correggere eventuali errori visuali
-        const { data: realPhoto } = await supabase.from('photos').select('likes').eq('id', photo.id).single();
-        if (realPhoto) {
-            setPhoto(prev => prev ? { ...prev, likes: realPhoto.likes } : null);
-        }
-        // Forza il bottone su "Votato"
-        setHasVoted(true);
       }
+      // Se action === 'removed', non mandiamo notifiche (come Instagram)
 
     } catch (error: any) {
-        console.error("Errore Like:", error);
-        // Se c'è un errore vero di rete, annulla l'ottimismo
-        setHasVoted(false);
-        setPhoto({ ...photo, likes: (photo.likes || 0) }); 
-        alert("Errore di connessione. Riprova.");
+        console.error("Errore Toggle Like:", error);
+        // Se il server fallisce, rimetti tutto com'era prima (rollback)
+        setPhoto({ ...photo, likes: previousLikes });
+        setHasVoted(previousHasVoted);
+        alert("Errore di connessione. Il like non è stato salvato.");
     }
   }
 
-  // --- RESTO DEL CODICE ---
+  // --- RESTO DEL CODICE (Commenti, Acquisto, ecc.) ---
   async function handlePostComment(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment || !commentAuthor || !photo) return alert("Scrivi un nome e un commento!");
@@ -222,10 +220,10 @@ export default function PhotoDetailPage() {
             )}
             <button 
               onClick={handleLike}
-              disabled={!userId || hasVoted} 
-              className={`w-full py-3 mt-4 font-bold rounded-xl transition transform flex items-center justify-center gap-2 ${!userId ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : hasVoted ? 'bg-indigo-900/50 text-indigo-300 border border-indigo-500/50 cursor-not-allowed' : 'bg-white text-indigo-950 hover:scale-[1.02] shadow-lg'}`}
+              disabled={!userId} // Abilitato sempre se sei loggato (puoi mettere e togliere)
+              className={`w-full py-3 mt-4 font-bold rounded-xl transition transform flex items-center justify-center gap-2 ${!userId ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : hasVoted ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg scale-105' : 'bg-white text-indigo-950 hover:scale-[1.02] shadow-lg'}`}
             >
-              {userId ? (hasVoted ? "✅ Voto Registrato" : "❤️ Lascia un Like") : "Accedi per Votare"}
+              {userId ? (hasVoted ? "❤️ Ti piace" : "🤍 Mi piace") : "Accedi per Votare"}
             </button>
             {!userId && <p className="text-xs text-center text-gray-500 mt-2">Devi essere registrato per votare. <Link href="/login" className="text-white hover:underline">Accedi</Link></p>}
           </div>
