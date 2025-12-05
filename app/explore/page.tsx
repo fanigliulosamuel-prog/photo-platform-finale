@@ -16,6 +16,25 @@ type Photo = {
   likes: number;
 }
 
+// LISTA CATEGORIE ESTESA
+const CATEGORIES = [
+  "Tutti",
+  "Ritratti",
+  "Paesaggi",
+  "Street",
+  "Architettura",
+  "Natura",
+  "Animali",
+  "Viaggi",
+  "Moda",
+  "Food",
+  "Sport",
+  "Macro",
+  "Bianco e Nero",
+  "Eventi",
+  "Astratto"
+];
+
 export default function ExplorePage() {
   
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -105,27 +124,30 @@ export default function ExplorePage() {
             </div>
             <input 
               type="text" 
-              placeholder="Cerca 'Tramonto', 'Mario Rossi', 'Neon'..." 
+              placeholder="Cerca 'Tramonto', 'Mario', 'Neon'..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-12 pr-6 py-4 bg-white/5 border border-indigo-500/30 rounded-full text-white placeholder-indigo-300 focus:outline-none focus:bg-white/10 focus:border-indigo-400 focus:shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all"
             />
           </div>
 
-          <div className="flex flex-wrap justify-center gap-3">
-            {['Tutti', 'Ritratti', 'Paesaggi', 'Street', 'Architettura'].map((tag) => (
-              <button 
-                key={tag} 
-                onClick={() => setCategory(tag)}
-                className={`px-6 py-2 rounded-full text-sm font-bold tracking-wide transition-all duration-300 border ${
-                  category === tag 
-                    ? "bg-white text-indigo-950 border-white shadow-lg scale-105" 
-                    : "bg-white/5 text-indigo-300 border-white/10 hover:bg-white/10 hover:border-white/30"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+          {/* --- FILTRI CATEGORIE SCORREVOLI --- */}
+          <div className="w-full overflow-x-auto pb-4 custom-scrollbar">
+            <div className="flex flex-nowrap gap-3 justify-start md:justify-center min-w-max px-4">
+                {CATEGORIES.map((tag) => (
+                <button 
+                    key={tag} 
+                    onClick={() => setCategory(tag)}
+                    className={`px-6 py-2 rounded-full text-sm font-bold tracking-wide transition-all duration-300 border whitespace-nowrap ${
+                    category === tag 
+                        ? "bg-white text-indigo-950 border-white shadow-lg scale-105" 
+                        : "bg-white/5 text-indigo-300 border-white/10 hover:bg-white/10 hover:border-white/30"
+                    }`}
+                >
+                    {tag}
+                </button>
+                ))}
+            </div>
           </div>
         </div>
 
@@ -150,7 +172,7 @@ export default function ExplorePage() {
                     </div>
                     <h3 className="text-white font-bold text-lg translate-y-4 group-hover:translate-y-0 transition duration-300">{photo.title}</h3>
                     <div className="flex justify-between items-center mt-2 translate-y-4 group-hover:translate-y-0 transition duration-300 delay-75">
-                      <span className="text-indigo-200 text-xs">{photo.author_name}</span>
+                      <span className="text-indigo-200 text-xs">{photo.category}</span>
                       <span className="text-white text-xs bg-white/10 px-2 py-1 rounded-full">❤️ {photo.likes || 0}</span>
                     </div>
                   </div>
