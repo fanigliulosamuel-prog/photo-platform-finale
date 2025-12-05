@@ -57,11 +57,35 @@ export default function ExplorePage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white relative overflow-hidden">
       
-      {/* --- SFONDO TEXTURE & LUCI (Stile Aurora) --- */}
+      {/* --- SFONDO TEXTURE & LUCI --- */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
+
+      {/* --- NUOVO MENU DI NAVIGAZIONE --- */}
+      <nav className="relative z-20 p-6 flex justify-between items-center max-w-7xl mx-auto w-full border-b border-white/5">
+        
+        {/* Logo / Home Link */}
+        <Link href="/" className={`${playfair.className} text-2xl font-bold text-white tracking-tight hover:text-indigo-300 transition`}>
+           Photo Platform
+        </Link>
+
+        {/* Pulsanti Destra */}
+        <div className="flex items-center gap-4">
+            <Link href="/dashboard">
+                <button className="px-5 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-bold text-white transition backdrop-blur-md flex items-center gap-2">
+                  🏠 Dashboard
+                </button>
+            </Link>
+            <Link href="/">
+                <button className="hidden sm:block px-5 py-2 text-sm font-bold text-indigo-200 hover:text-white transition">
+                  Torna alla Home
+                </button>
+            </Link>
+        </div>
+      </nav>
+
 
       <div className="relative z-10 p-8 md:p-12 max-w-7xl mx-auto">
         
