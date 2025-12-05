@@ -141,18 +141,18 @@ export default function PhotoDetailPage() {
       if (action === 'added') {
         await sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
       }
-      // Se action === 'removed', non mandiamo notifiche (come Instagram)
 
     } catch (error: any) {
         console.error("Errore Toggle Like:", error);
         // Se il server fallisce, rimetti tutto com'era prima (rollback)
         setPhoto({ ...photo, likes: previousLikes });
         setHasVoted(previousHasVoted);
-        alert("Errore di connessione. Il like non è stato salvato.");
+        // Mostra l'errore reale per capire cosa succede
+        alert("Errore Like: " + (error.message || error.toString()));
     }
   }
 
-  // --- RESTO DEL CODICE (Commenti, Acquisto, ecc.) ---
+  // --- RESTO DEL CODICE ---
   async function handlePostComment(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment || !commentAuthor || !photo) return alert("Scrivi un nome e un commento!");
@@ -220,7 +220,7 @@ export default function PhotoDetailPage() {
             )}
             <button 
               onClick={handleLike}
-              disabled={!userId} // Abilitato sempre se sei loggato (puoi mettere e togliere)
+              disabled={!userId} 
               className={`w-full py-3 mt-4 font-bold rounded-xl transition transform flex items-center justify-center gap-2 ${!userId ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : hasVoted ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg scale-105' : 'bg-white text-indigo-950 hover:scale-[1.02] shadow-lg'}`}
             >
               {userId ? (hasVoted ? "❤️ Ti piace" : "🤍 Mi piace") : "Accedi per Votare"}
