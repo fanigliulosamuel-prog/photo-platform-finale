@@ -1,4 +1,4 @@
-"use client" // Rende la pagina interattiva
+"use client"
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -22,8 +22,8 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userPhotos, setUserPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // NUOVO STATO PER IL MENU MOBILE
   
-  // Calcola statistiche reali (basate sulle foto dell'utente)
   const totalLikes = userPhotos.reduce((acc, photo) => acc + (photo.likes || 0), 0);
   const totalPhotos = userPhotos.length;
   
@@ -35,7 +35,6 @@ export default function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        // Se non c'è utente, reindirizza al login
         router.push('/login');
         return;
       }
@@ -83,47 +82,54 @@ export default function Dashboard() {
       <div className="flex w-full relative z-10 h-screen">
         
         {/* --- SIDEBAR (Menu Laterale) --- */}
-        <aside className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 hidden md:flex flex-col p-6 h-full">
+        <aside className={`fixed md:relative w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col p-6 h-full transition-transform duration-300 z-50
+          ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+          
           <h2 className="text-2xl font-bold text-white mb-10 tracking-tight">
             Photo Platform
           </h2>
+          
+          {/* Pulsante di chiusura (Solo su mobile) */}
+          <button onClick={() => setIsMenuOpen(false)} className="absolute top-4 right-4 md:hidden text-gray-400 hover:text-white">
+            ✕
+          </button>
 
           <nav className="flex flex-col gap-3 overflow-y-auto custom-scrollbar flex-1">
             
-            <Link href="/dashboard" className="flex items-center gap-3 p-3 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-white font-medium shadow-lg">
+            <Link href="/dashboard" className="flex items-center gap-3 p-3 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>
               🏠 Dashboard
             </Link>
             
             <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
             
-            <Link href="/explore" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition">
+            <Link href="/explore" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               📷 Galleria Pubblica
             </Link>
-            <Link href="/community" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition">
+            <Link href="/community" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               🌍 Mappa Community
             </Link>
-            <Link href="/challenges" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition">
+            <Link href="/challenges" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               🏆 Sfide del Mese
             </Link>
-            <Link href="/blog" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition">
+            <Link href="/blog" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               📘 Blog Storie
             </Link>
 
             <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
 
-            <Link href="/upload" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition">
+            <Link href="/upload" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               📤 Carica Foto
             </Link>
-            <Link href="/contracts" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition">
+            <Link href="/contracts" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               📄 Genera Contratti
             </Link>
-            <Link href="/private" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition">
+            <Link href="/private" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               🔒 Area Clienti
             </Link>
 
             <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Account</p>
 
-            <Link href="/settings" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition">
+            <Link href="/settings" className="flex items-center gap-3 p-3 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
               ⚙️ Impostazioni
             </Link>
           </nav>
@@ -134,36 +140,44 @@ export default function Dashboard() {
             </a>
           </div>
         </aside>
+        
+        {/* Overlay (Solo su mobile quando il menu è aperto) */}
+        {isMenuOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
 
         {/* --- AREA PRINCIPALE --- */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           
           {/* Intestazione DINAMICA */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+          <div className="flex justify-between items-center mb-10">
+            
+            {/* Pulsante Menu Hamburger (Solo su mobile) */}
+            <button onClick={() => setIsMenuOpen(true)} className="text-white md:hidden text-2xl mr-4">
+              ☰
+            </button>
+            
             <div>
-              <h1 className="text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato, {profile.username}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato, {profile.username}</h1>
               <p className="text-indigo-200">Il tuo hub personale per gestire l'arte.</p>
             </div>
             
-            <Link href="/upload">
+            {/* BOTTONE UPLOAD RAPIDO */}
+            <Link href="/upload" className="hidden md:block">
               <button className="bg-white text-indigo-950 px-8 py-3 rounded-full font-bold hover:scale-105 transition shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                 + Nuovo Progetto
               </button>
             </Link>
           </div>
 
-          {/* Card Statistiche (SOLO Visualizzazioni e Apprezzamenti) */}
+          {/* Card Statistiche */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             
-            {/* 1. Statistiche Foto Caricate */}
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 hover:border-indigo-500/30 transition hover:bg-white/10 group">
               <h3 className="text-indigo-200 text-sm mb-2 uppercase tracking-wider font-bold">Foto Caricate</h3>
               <p className="text-4xl font-bold text-white group-hover:text-indigo-400 transition">{totalPhotos}</p>
               <p className="text-gray-400 text-xs mt-2">Aggiornato in tempo reale</p>
             </div>
 
-            {/* 2. Apprezzamenti (Like Totali) */}
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 hover:border-purple-500/30 transition hover:bg-white/10 group">
               <h3 className="text-indigo-200 text-sm mb-2 uppercase tracking-wider font-bold">Like Totali</h3>
               <p className="text-4xl font-bold text-white group-hover:text-purple-400 transition">{totalLikes}</p>
