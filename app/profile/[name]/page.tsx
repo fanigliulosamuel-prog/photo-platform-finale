@@ -13,33 +13,51 @@ type Photo = {
   likes: number;
 }
 
+type Profile = {
+  username: string;
+  bio: string;
+  city: string;
+  avatar_url: string;
+}
+
 export default function ProfilePage() {
   const params = useParams();
   const authorName = decodeURIComponent(params?.name as string);
 
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // Calcolo statistiche
   const totalLikes = photos.reduce((acc, curr) => acc + (curr.likes || 0), 0);
   const totalPhotos = photos.length;
 
   useEffect(() => {
-    async function fetchAuthorPhotos() {
+    async function fetchAuthorData() {
       if (!authorName) return;
       
-      const { data, error } = await supabase
+      // 1. Prendi le FOTO PUBBLICHE dell'autore
+      const { data: photosData } = await supabase
         .from('photos')
         .select('*')
-        .eq('author_name', authorName);
+        .eq('author_name', authorName)
+        .is('project_id', null) // FILTRO FONDAMENTALE: Solo foto senza progetto (pubbliche)
+        .order('created_at', { ascending: false });
 
-      if (!error) {
-        setPhotos(data || []);
-      }
+      if (photosData) setPhotos(photosData);
+
+      // 2. Prendi il PROFILO dell'autore
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .ilike('username', authorName)
+        .single();
+
+      if (profileData) setProfile(profileData);
+
       setLoading(false);
     }
 
-    fetchAuthorPhotos();
+    fetchAuthorData();
   }, [authorName]);
 
   return (
@@ -56,42 +74,57 @@ export default function ProfilePage() {
 
       <div className="relative z-10 max-w-7xl mx-auto p-8">
         
-        {/* --- HEADER PROFILO (Compatto) --- */}
-        <div className="flex flex-col md:flex-row items-center gap-8 mb-12 bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
+        {/* --- HEADER PROFILO --- */}
+        <div className="flex flex-col md:flex-row items-start gap-10 mb-12 bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
           
-          {/* Avatar (Rimpicciolito) */}
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-4xl font-bold shadow-[0_0_30px_rgba(99,102,241,0.4)] border-4 border-slate-900 text-white relative">
-            {authorName.charAt(0).toUpperCase()}
-            {/* Badge Pro */}
-            <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-400 rounded-full border-4 border-slate-900"></div>
+          {/* Avatar */}
+          <div className="w-28 h-28 shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-4xl font-bold shadow-[0_0_30px_rgba(99,102,241,0.4)] border-4 border-slate-900 text-white relative overflow-hidden">
+            {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={authorName} className="w-full h-full object-cover" />
+            ) : (
+                authorName.charAt(0).toUpperCase()
+            )}
           </div>
 
-          <div className="text-center md:text-left flex-1">
-            {/* Nome (Ridimensionato) */}
-            <h1 className="text-3xl md:text-5xl font-bold mb-2 text-white tracking-tight">{authorName}</h1>
-            <p className="text-indigo-200">Fotografo della Community</p>
+          <div className="flex-1 w-full">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                <div>
+                    <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-1">{authorName}</h1>
+                    <p className="text-indigo-200 flex items-center gap-2">
+                        Fotografo 
+                        {profile?.city && <span className="text-white/60">• {profile.city} 📍</span>}
+                    </p>
+                </div>
+                <button className="mt-4 md:mt-0 px-8 py-3 bg-white text-indigo-950 font-bold rounded-2xl hover:scale-105 transition shadow-lg text-sm">
+                    Segui +
+                </button>
+            </div>
+
+            {/* BIO (Se esiste) */}
+            {profile?.bio && (
+                <p className="text-gray-300 text-sm leading-relaxed max-w-2xl mb-6 bg-black/20 p-4 rounded-xl border border-white/5">
+                    "{profile.bio}"
+                </p>
+            )}
             
             {/* Statistiche */}
-            <div className="flex gap-6 mt-6 justify-center md:justify-start">
-              <div className="text-center bg-white/5 p-4 rounded-2xl min-w-[90px]">
+            <div className="flex gap-8 border-t border-white/10 pt-6">
+              <div>
                 <span className="block text-2xl font-bold text-white">{totalPhotos}</span>
-                <span className="text-xs text-indigo-200 uppercase tracking-wider font-bold">Scatti</span>
+                <span className="text-xs text-indigo-300 uppercase tracking-wider font-bold">Scatti Pubblici</span>
               </div>
-              <div className="text-center bg-white/5 p-4 rounded-2xl min-w-[90px]">
+              <div>
                 <span className="block text-2xl font-bold text-white">{totalLikes}</span>
-                <span className="text-xs text-indigo-200 uppercase tracking-wider font-bold">Like Totali</span>
+                <span className="text-xs text-indigo-300 uppercase tracking-wider font-bold">Like Totali</span>
               </div>
             </div>
           </div>
 
-          <button className="px-8 py-3 bg-white text-indigo-950 font-bold rounded-2xl hover:scale-105 transition shadow-lg text-sm">
-            Segui +
-          </button>
         </div>
 
         {/* --- PORTFOLIO --- */}
         <div className="flex items-center gap-4 mb-8">
-          <h2 className="text-2xl font-bold text-white">Portfolio</h2>
+          <h2 className="text-2xl font-bold text-white">Portfolio Pubblico</h2>
           <div className="h-px bg-white/10 flex-1"></div>
         </div>
 
@@ -114,7 +147,7 @@ export default function ProfilePage() {
             
             {photos.length === 0 && (
                <div className="col-span-full text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
-                  <p className="text-gray-400 text-xl">Questo utente non ha ancora caricato foto.</p>
+                  <p className="text-gray-400 text-xl">Nessuna foto pubblica trovata.</p>
                </div>
             )}
           </div>

@@ -28,6 +28,10 @@ export default function ExplorePage() {
     
     let query = supabase.from('photos').select('*');
 
+    // 1. FILTRO SICUREZZA: Mostra solo foto PUBBLICHE (senza progetto)
+    query = query.is('project_id', null);
+
+    // 2. Filtri Utente
     if (category !== "Tutti") {
       query = query.eq('category', category);
     }
@@ -63,15 +67,11 @@ export default function ExplorePage() {
       </div>
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
-      {/* --- NUOVO MENU DI NAVIGAZIONE --- */}
+      {/* --- MENU DI NAVIGAZIONE --- */}
       <nav className="relative z-20 p-6 flex justify-between items-center max-w-7xl mx-auto w-full border-b border-white/5">
-        
-        {/* Logo / Home Link */}
         <Link href="/" className={`${playfair.className} text-2xl font-bold text-white tracking-tight hover:text-indigo-300 transition`}>
            Photo Platform
         </Link>
-
-        {/* Pulsanti Destra */}
         <div className="flex items-center gap-4">
             <Link href="/dashboard">
                 <button className="px-5 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-sm font-bold text-white transition backdrop-blur-md flex items-center gap-2">
@@ -86,10 +86,8 @@ export default function ExplorePage() {
         </div>
       </nav>
 
-
       <div className="relative z-10 p-8 md:p-12 max-w-7xl mx-auto">
         
-        {/* INTESTAZIONE */}
         <div className="text-center mb-12">
           <h1 className={`${playfair.className} text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-xl tracking-tight`}>
             Esplora Visioni
@@ -99,10 +97,8 @@ export default function ExplorePage() {
           </p>
         </div>
 
-        {/* --- BARRA DI RICERCA & FILTRI --- */}
+        {/* --- BARRA DI RICERCA --- */}
         <div className="flex flex-col items-center gap-8 mb-16">
-          
-          {/* Input Ricerca */}
           <div className="relative w-full max-w-lg group">
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
               <span className="text-indigo-400 text-xl">🔍</span>
@@ -116,7 +112,6 @@ export default function ExplorePage() {
             />
           </div>
 
-          {/* Filtri Categorie */}
           <div className="flex flex-wrap justify-center gap-3">
             {['Tutti', 'Ritratti', 'Paesaggi', 'Street', 'Architettura'].map((tag) => (
               <button 
@@ -143,39 +138,29 @@ export default function ExplorePage() {
           <div className="columns-1 md:columns-3 lg:columns-4 gap-6 space-y-6">
             {photos.map((photo) => (
               <Link href={`/photo/${photo.id}`} key={photo.id} className="block break-inside-avoid group cursor-pointer">
-                
                 <div className="relative overflow-hidden rounded-2xl bg-slate-800 border border-white/10 shadow-lg group-hover:border-indigo-500/50 group-hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition-all duration-500">
-                  
                   <img 
                     src={photo.url} 
                     alt={photo.title} 
                     className="w-full h-auto object-cover transform group-hover:scale-110 transition duration-700 ease-in-out" 
                   />
-                  
-                  {/* Overlay Info + Watermark */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col justify-end p-5">
-                    
-                    {/* Watermark in alto */}
                     <div className="absolute top-4 left-4 text-white/70 text-xs font-bold bg-black/30 px-2 py-1 rounded backdrop-blur-sm opacity-80">
                         © {photo.author_name}
                     </div>
-
                     <h3 className="text-white font-bold text-lg translate-y-4 group-hover:translate-y-0 transition duration-300">{photo.title}</h3>
                     <div className="flex justify-between items-center mt-2 translate-y-4 group-hover:translate-y-0 transition duration-300 delay-75">
                       <span className="text-indigo-200 text-xs">{photo.author_name}</span>
                       <span className="text-white text-xs bg-white/10 px-2 py-1 rounded-full">❤️ {photo.likes || 0}</span>
                     </div>
                   </div>
-
                 </div>
-
               </Link>
             ))}
             
             {photos.length === 0 && (
                <div className="col-span-full text-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
-                  <p className="text-indigo-200 text-xl font-light">Nessun risultato trovato per "{search}" in {category}.</p>
-                  <button onClick={() => {setSearch(""); setCategory("Tutti")}} className="mt-4 text-white underline hover:text-indigo-400">Resetta filtri</button>
+                  <p className="text-indigo-200 text-xl font-light">Nessun risultato trovato.</p>
                </div>
             )}
           </div>
