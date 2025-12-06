@@ -65,22 +65,22 @@ export default function LoginPage() {
   }
 
   return (
-    // MODIFICA QUI: Sfondo PIÙ CHIARO E CALDO (stone-600/500)
-    <main className="min-h-screen bg-gradient-to-br from-stone-600 via-stone-500 to-stone-600 text-white flex items-center justify-center p-4 relative overflow-hidden">
+    // MODIFICA QUI: Sfondo PIÙ SCURO E CALDO (stone-700/800)
+    <main className="min-h-screen bg-gradient-to-br from-stone-700 via-stone-800 to-stone-700 text-white flex items-center justify-center p-4 relative overflow-hidden">
       
       {/* --- SFONDO TEXTURE & LUCI (Grana Molto Più Sottile) --- */}
       
-      {/* Texture Grana (Opacità ridotta da 20% a 5%) */}
+      {/* Texture Grana (Opacità ridotta) */}
       <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
       {/* Luci Ambientali Calde (Ambra chiara) */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
-      {/* CARD CENTRALE (Glassmorphism caldo e chiaro) */}
-      <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-xl border border-stone-300/50 p-8 rounded-3xl shadow-2xl">
+      {/* CARD CENTRALE (Glassmorphism più contrastato) */}
+      <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-stone-400/50 p-8 rounded-3xl shadow-2xl">
         
         <h2 className="text-4xl font-bold text-white mb-2 text-center tracking-tight">
           {isSignUp ? "Unisciti a Noi" : "Bentornato"}
@@ -99,7 +99,7 @@ export default function LoginPage() {
               placeholder="nome@esempio.com" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
-              className="w-full bg-stone-500/40 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 focus:bg-stone-500/60 outline-none transition" 
+              className="w-full bg-stone-700/50 border border-stone-600/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 focus:bg-stone-700/70 outline-none transition" 
               required
             />
           </div>
@@ -111,7 +111,7 @@ export default function LoginPage() {
               placeholder="••••••••" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
-              className="w-full bg-stone-500/40 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 focus:bg-stone-500/60 outline-none transition" 
+              className="w-full bg-stone-700/50 border border-stone-600/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 focus:bg-stone-700/70 outline-none transition" 
               required
             />
           </div>
@@ -121,11 +121,11 @@ export default function LoginPage() {
             <div className="animate-fade-in space-y-5">
               <div>
                 <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-2">Username</label>
-                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-stone-500/40 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 focus:bg-stone-500/60 outline-none transition" required={isSignUp}/>
+                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-stone-700/50 border border-stone-600/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 focus:bg-stone-700/70 outline-none transition" required={isSignUp}/>
               </div>
               <div>
                 <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-2">Città</label>
-                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-stone-500/40 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 focus:bg-stone-500/60 outline-none transition" required={isSignUp}/>
+                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-stone-700/50 border border-stone-600/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 focus:bg-stone-700/70 outline-none transition" required={isSignUp}/>
               </div>
             </div>
           )}
