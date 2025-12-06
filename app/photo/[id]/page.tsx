@@ -93,30 +93,22 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
-  // --- FUNZIONE NOTIFICA ROBUSTA ---
+  // --- FUNZIONE PER INVIARE NOTIFICA (MANUALE) ---
   async function sendNotification(type: 'like' | 'comment', message: string) {
-    if (!photo) return;
+    if (!photo || !userId) return;
     
-    // Fallback: se non abbiamo ancora caricato lo username, riproviamo a prenderlo
-    let actorName = currentUsername;
-    if (!actorName && userId) {
-         const { data: p } = await supabase.from('profiles').select('username').eq('id', userId).single();
-         if (p) actorName = p.username;
-    }
-
-    // 1. Cerca l'ID del proprietario della foto (Destinatario)
-    // Usiamo il nome autore salvato nella foto per trovare il profilo corrispondente
+    // Cerca l'ID del proprietario della foto usando il nome autore (con ilike per ignorare maiuscole)
     const { data: ownerProfile } = await supabase
         .from('profiles')
         .select('id')
-        .eq('username', photo.author_name)
+        .ilike('username', photo.author_name) // Uso ilike per sicurezza
         .single();
     
-    // 2. Se troviamo il proprietario e NON sei tu stesso (niente auto-notifiche)
+    // Se troviamo il proprietario e NON sei tu stesso (niente auto-notifiche)
     if (ownerProfile && ownerProfile.id !== userId) {
         const { error } = await supabase.from('notifications').insert([{
             user_id: ownerProfile.id, // A chi va
-            actor_name: actorName || "Un utente", // Chi sei tu
+            actor_name: currentUsername || "Un utente", // Chi sei tu
             type: type,
             photo_id: photo.id,
             message: message, // Es: "ha messo Mi Piace a questa foto"
@@ -161,7 +153,8 @@ export default function PhotoDetailPage() {
         console.error("Errore Like:", error);
         setPhoto({ ...photo, likes: previousLikes });
         setHasVoted(previousHasVoted);
-        alert("Errore di connessione. Riprova.");
+        // Mostra l'errore REALE per capire cosa non va (es. function not found)
+        alert("Errore Like: " + error.message);
     }
   }
 
@@ -255,6 +248,7 @@ export default function PhotoDetailPage() {
           <div className="bg-stone-400/20 p-6 rounded-3xl border border-stone-400/30 backdrop-blur-xl">
             <h1 className="text-3xl font-bold mb-2 text-white">{photo.title}</h1>
             
+            {/* Link Profilo */}
             <p className="text-stone-200 text-sm mb-4">
               by <Link href={`/profile/${photo.author_name}`} className="font-bold text-white hover:text-amber-200 hover:underline transition cursor-pointer">{photo.author_name}</Link>
             </p>
@@ -264,6 +258,7 @@ export default function PhotoDetailPage() {
                 <span className="text-2xl font-bold text-white">{photo.likes || 0}</span>
             </div>
 
+            {/* SEZIONE ACQUISTO */}
             {photo.price > 0 && (
                 <div className="mt-6 border-t border-stone-500/50 pt-4">
                     <div className="flex justify-between items-center mb-3">
