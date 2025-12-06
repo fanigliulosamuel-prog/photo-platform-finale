@@ -64,7 +64,6 @@ export default function Dashboard() {
   }, [router]);
   
   async function handleDeletePhoto(photoId: number, photoUrl: string) {
-    // Conferma
     if (!window.confirm('Sei sicuro di voler eliminare questo scatto? L\'azione è irreversibile.')) {
       return;
     }
@@ -73,6 +72,7 @@ export default function Dashboard() {
     setUserPhotos(userPhotos.filter(p => p.id !== photoId));
 
     try {
+      // 1. Cancella dal DB
       const { error: dbError } = await supabase
         .from('photos')
         .delete()
@@ -80,17 +80,18 @@ export default function Dashboard() {
 
       if (dbError) throw dbError;
       
+      // 2. Cancella dallo Storage
       const fileName = photoUrl.split('/').pop();
       if (fileName) {
          const { error: storageError } = await supabase.storage.from('uploads').remove([fileName]);
-         if (storageError) console.warn("Errore storage:", storageError);
+         if (storageError) console.warn("Nota: Errore cancellazione file fisico (non bloccante):", storageError);
       }
 
       alert("Foto eliminata con successo!");
 
-    } catch (error) {
+    } catch (error: any) {
       setUserPhotos(originalPhotos);
-      alert("Errore nell'eliminazione. Riprova.");
+      alert("Errore nell'eliminazione: " + error.message);
       console.error(error);
     }
   }
@@ -195,9 +196,9 @@ export default function Dashboard() {
                   
                   <img src={photo.url} className="w-full h-full object-cover" />
                   
-                  {/* FIX: Visibile SEMPRE su mobile/tablet, solo in hover su desktop */}
-                  <div className="absolute inset-0 bg-indigo-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300
-                                  opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                  {/* FIX TABLET E MOBILE: Visibile SEMPRE fino a XL, hover su Desktop grandi */}
+                  <div className="absolute inset-0 bg-indigo-950/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300
+                                  opacity-100 xl:opacity-0 xl:group-hover:opacity-100">
                       
                       <Link href={`/photo/${photo.id}`}>
                         <button className="text-white font-bold border border-white/30 bg-white/10 px-5 py-2 rounded-full hover:bg-white hover:text-black transition cursor-pointer text-sm">
@@ -205,11 +206,10 @@ export default function Dashboard() {
                         </button>
                       </Link>
                       
-                      {/* TASTO ELIMINA (Fix: stopPropagation per evitare errori su touch) */}
                       <button 
                         onClick={(e) => {
                            e.preventDefault(); 
-                           e.stopPropagation(); // FONDAMENTALE per mobile
+                           e.stopPropagation(); 
                            handleDeletePhoto(photo.id, photo.url);
                         }}
                         className="text-red-400 text-sm font-bold hover:text-red-200 hover:bg-red-500/20 px-4 py-2 rounded-full transition border border-red-500/20"
@@ -222,7 +222,7 @@ export default function Dashboard() {
             
             {userPhotos.length === 0 && (
                 <div className="col-span-2 aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-white/10 flex items-center justify-center p-4 text-center">
-                    <p className="text-gray-400 text-sm">Non hai ancora caricato scatti.<br/>Inizia subito a creare il tuo portfolio!</p>
+                    <p className="text-gray-400 text-sm">Non hai ancora caricato scatti.</p>
                 </div>
             )}
           </div>
