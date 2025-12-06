@@ -93,25 +93,34 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
-  // --- FUNZIONE PER INVIARE NOTIFICA (MANUALE) ---
+  // --- FUNZIONE NOTIFICA ROBUSTA ---
   async function sendNotification(type: 'like' | 'comment', message: string) {
     if (!photo) return;
     
-    // Cerca l'ID del proprietario della foto usando il nome autore
+    // Fallback: se non abbiamo ancora caricato lo username, riproviamo a prenderlo
+    let actorName = currentUsername;
+    if (!actorName && userId) {
+         const { data: p } = await supabase.from('profiles').select('username').eq('id', userId).single();
+         if (p) actorName = p.username;
+    }
+
+    // 1. Cerca l'ID del proprietario della foto (Destinatario)
+    // Usiamo il nome autore salvato nella foto per trovare il profilo corrispondente
     const { data: ownerProfile } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', photo.author_name)
         .single();
     
-    // Se troviamo il proprietario e non sei tu stesso (evita auto-notifiche)
+    // 2. Se troviamo il proprietario e NON sei tu stesso (niente auto-notifiche)
     if (ownerProfile && ownerProfile.id !== userId) {
         const { error } = await supabase.from('notifications').insert([{
-            user_id: ownerProfile.id, // Destinatario
-            actor_name: currentUsername || "Un utente", // Chi fa l'azione
+            user_id: ownerProfile.id, // A chi va
+            actor_name: actorName || "Un utente", // Chi sei tu
             type: type,
             photo_id: photo.id,
-            message: message
+            message: message, // Es: "ha messo Mi Piace a questa foto"
+            is_read: false
         }]);
         
         if (error) console.error("Errore invio notifica:", error);
@@ -135,7 +144,7 @@ export default function PhotoDetailPage() {
     }
 
     try {
-      // Chiama la funzione SQL Toggle
+      // 1. Chiama il DB per il voto (Toggle)
       const { data: action, error } = await supabase.rpc('toggle_vote', { 
         photo_id_input: photo.id, 
         user_id_input: userId 
@@ -143,9 +152,9 @@ export default function PhotoDetailPage() {
 
       if (error) throw error;
 
-      // SE IL LIKE È STATO AGGIUNTO -> MANDA NOTIFICA
+      // 2. INVIA NOTIFICA MANUALE (Solo se il like è stato AGGIUNTO)
       if (action === 'added') {
-        await sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
+        await sendNotification('like', 'ha messo Mi Piace a questa foto.');
       }
 
     } catch (error: any) {
@@ -172,7 +181,7 @@ export default function PhotoDetailPage() {
       ]);
 
     if (!error) {
-      // COMMENTO INSERITO -> MANDA NOTIFICA
+      // Notifica manuale anche per i commenti
       await sendNotification('comment', `ha commentato: "${newComment.substring(0, 20)}..."`);
       
       alert("Commento pubblicato!");
@@ -191,15 +200,15 @@ export default function PhotoDetailPage() {
   if (!photo) return <div className="min-h-screen bg-stone-600 flex items-center justify-center text-white">Foto non trovata.</div>;
 
   return (
-    // FIX SCROLL: h-screen e overflow-y-auto creano un'area di scorrimento perfetta per mobile
+    // FIX SCROLL: h-screen e overflow-y-auto per mobile
     <main className="h-screen w-full bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white overflow-y-auto overflow-x-hidden">
       
-      {/* Sfondo FISSATO (non si muove quando scorri) */}
+      {/* Sfondo Fissato */}
       <div className="fixed inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde FISSATE */}
+      {/* Luci Ambientali Calde */}
       <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
@@ -214,7 +223,7 @@ export default function PhotoDetailPage() {
 
       <div className="relative z-10 flex flex-col md:flex-row max-w-7xl mx-auto w-full gap-10 p-6 pb-20 justify-center items-start">
         
-        {/* FOTO - FIX: 'sticky' attivo solo su Desktop (md:sticky) */}
+        {/* FOTO */}
         <div className="flex-1 w-full relative md:sticky md:top-10">
            <div className="relative bg-stone-700/50 rounded-2xl border border-stone-500/30 p-1 backdrop-blur-sm shadow-2xl">
             <img 
@@ -223,7 +232,7 @@ export default function PhotoDetailPage() {
               className="w-full h-auto max-h-[80vh] object-contain rounded-xl" 
             />
             
-            {/* WATERMARK */}
+            {/* WATERMARK FISSO */}
             <div className="absolute bottom-5 right-5 text-white/50 text-sm font-bold bg-black/50 p-2 rounded backdrop-blur-sm pointer-events-none select-none">
                 © {photo.author_name} - Photo Platform
             </div>
@@ -246,7 +255,6 @@ export default function PhotoDetailPage() {
           <div className="bg-stone-400/20 p-6 rounded-3xl border border-stone-400/30 backdrop-blur-xl">
             <h1 className="text-3xl font-bold mb-2 text-white">{photo.title}</h1>
             
-            {/* Link Profilo */}
             <p className="text-stone-200 text-sm mb-4">
               by <Link href={`/profile/${photo.author_name}`} className="font-bold text-white hover:text-amber-200 hover:underline transition cursor-pointer">{photo.author_name}</Link>
             </p>
@@ -256,7 +264,6 @@ export default function PhotoDetailPage() {
                 <span className="text-2xl font-bold text-white">{photo.likes || 0}</span>
             </div>
 
-            {/* SEZIONE ACQUISTO */}
             {photo.price > 0 && (
                 <div className="mt-6 border-t border-stone-500/50 pt-4">
                     <div className="flex justify-between items-center mb-3">
@@ -271,7 +278,6 @@ export default function PhotoDetailPage() {
                     </button>
                 </div>
             )}
-
 
             <button 
               onClick={handleLike}
