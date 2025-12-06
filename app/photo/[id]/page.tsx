@@ -60,8 +60,9 @@ export default function PhotoDetailPage() {
 
       if (photoData) setPhoto(photoData as Photo);
 
-      // 3. Controlla voto
+      // 3. Controlla voto e prendi username
       if (user) {
+        // Prendi il TUO username per firmare la notifica
         const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
         if (myProfile) setCurrentUsername(myProfile.username);
 
@@ -92,6 +93,31 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
+  // --- FUNZIONE PER INVIARE NOTIFICA (MANUALE) ---
+  async function sendNotification(type: 'like' | 'comment', message: string) {
+    if (!photo) return;
+    
+    // Cerca l'ID del proprietario della foto usando il nome autore
+    const { data: ownerProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', photo.author_name)
+        .single();
+    
+    // Se troviamo il proprietario e non sei tu stesso (evita auto-notifiche)
+    if (ownerProfile && ownerProfile.id !== userId) {
+        const { error } = await supabase.from('notifications').insert([{
+            user_id: ownerProfile.id, // Destinatario
+            actor_name: currentUsername || "Un utente", // Chi fa l'azione
+            type: type,
+            photo_id: photo.id,
+            message: message
+        }]);
+        
+        if (error) console.error("Errore invio notifica:", error);
+    }
+  }
+
   // --- GESTIONE LIKE ---
   async function handleLike() {
     if (!photo || !userId) return; 
@@ -99,6 +125,7 @@ export default function PhotoDetailPage() {
     const previousLikes = photo.likes;
     const previousHasVoted = hasVoted;
 
+    // UI Ottimistica
     if (hasVoted) {
         setPhoto({ ...photo, likes: Math.max(0, (photo.likes || 0) - 1) });
         setHasVoted(false);
@@ -108,12 +135,18 @@ export default function PhotoDetailPage() {
     }
 
     try {
+      // Chiama la funzione SQL Toggle
       const { data: action, error } = await supabase.rpc('toggle_vote', { 
         photo_id_input: photo.id, 
         user_id_input: userId 
       });
 
       if (error) throw error;
+
+      // SE IL LIKE È STATO AGGIUNTO -> MANDA NOTIFICA
+      if (action === 'added') {
+        await sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
+      }
 
     } catch (error: any) {
         console.error("Errore Like:", error);
@@ -139,6 +172,9 @@ export default function PhotoDetailPage() {
       ]);
 
     if (!error) {
+      // COMMENTO INSERITO -> MANDA NOTIFICA
+      await sendNotification('comment', `ha commentato: "${newComment.substring(0, 20)}..."`);
+      
       alert("Commento pubblicato!");
       window.location.reload(); 
     } else {
@@ -155,17 +191,17 @@ export default function PhotoDetailPage() {
   if (!photo) return <div className="min-h-screen bg-stone-600 flex items-center justify-center text-white">Foto non trovata.</div>;
 
   return (
-    // FIX SCROLL MOBILE: h-screen fissa l'altezza alla finestra, overflow-y-auto abilita lo scroll interno fluido
-    <main className="h-screen w-full bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white overflow-y-auto overflow-x-hidden">
+    // SFONDO CALDO (Stone 500/600)
+    <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-y-auto">
       
-      {/* Sfondo Fissato (FIXED) così non finisce mentre scorri */}
-      <div className="fixed inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
+      {/* Texture Grana */}
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde Fissate */}
-      <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
-      <div className="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
+      {/* Luci Ambientali Calde */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
       <nav className="relative z-20 p-8 flex justify-between items-center max-w-7xl mx-auto w-full">
         <Link href="/explore" className="flex items-center gap-2 text-stone-200 hover:text-white transition bg-stone-400/20 px-5 py-2 rounded-full border border-stone-400/30 backdrop-blur-md">
@@ -179,7 +215,7 @@ export default function PhotoDetailPage() {
       <div className="relative z-10 flex flex-col md:flex-row max-w-7xl mx-auto w-full gap-10 p-6 pb-20 justify-center items-start">
         
         {/* FOTO */}
-        <div className="flex-1 w-full relative md:sticky md:top-10">
+        <div className="flex-1 w-full relative sticky top-10">
            <div className="relative bg-stone-700/50 rounded-2xl border border-stone-500/30 p-1 backdrop-blur-sm shadow-2xl">
             <img 
               src={photo.url} 
@@ -187,7 +223,7 @@ export default function PhotoDetailPage() {
               className="w-full h-auto max-h-[80vh] object-contain rounded-xl" 
             />
             
-            {/* WATERMARK FISSO */}
+            {/* WATERMARK */}
             <div className="absolute bottom-5 right-5 text-white/50 text-sm font-bold bg-black/50 p-2 rounded backdrop-blur-sm pointer-events-none select-none">
                 © {photo.author_name} - Photo Platform
             </div>
