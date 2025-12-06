@@ -46,6 +46,7 @@ export default function LoginPage() {
         }
 
         alert("Registrazione completata! Puoi accedere subito.");
+        router.refresh(); // Forza l'aggiornamento dei dati utente
         router.push('/dashboard'); 
         
       } else {
@@ -55,6 +56,9 @@ export default function LoginPage() {
           password,
         });
         if (error) throw error;
+        
+        // FIX: Aggiorna lo stato dell'app prima di cambiare pagina
+        router.refresh(); 
         router.push('/dashboard'); 
       }
     } catch (error: any) {
@@ -65,22 +69,19 @@ export default function LoginPage() {
   }
 
   return (
-    // MODIFICA QUI: Sfondo PIÙ CHIARO (stone-500/600)
+    // SFONDO: Manteniamo il gradiente chiaro e caldo
     <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white flex items-center justify-center p-4 relative overflow-hidden">
       
-      {/* --- SFONDO TEXTURE & LUCI (Grana Molto Più Sottile) --- */}
-      
-      {/* Texture Grana (Opacità ridotta) */}
+      {/* Texture Grana */}
       <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde (Ambra chiara) */}
+      {/* Luci Ambientali Calde */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
-      {/* CARD CENTRALE (Glassmorphism caldo e luminoso) */}
-      {/* Card e input adattati al nuovo sfondo PIÙ chiaro */}
+      {/* CARD CENTRALE */}
       <div className="relative z-10 w-full max-w-md bg-stone-400/40 backdrop-blur-xl border border-stone-300/50 p-8 rounded-3xl shadow-2xl">
         
         <h2 className="text-4xl font-bold text-white mb-2 text-center tracking-tight">
