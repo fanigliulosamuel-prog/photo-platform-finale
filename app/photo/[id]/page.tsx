@@ -40,7 +40,6 @@ export default function PhotoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [hasVoted, setHasVoted] = useState(false); 
   const [userId, setUserId] = useState<string | null>(null);
-  const [currentUsername, setCurrentUsername] = useState(""); 
 
   useEffect(() => {
     async function fetchData() {
@@ -60,12 +59,8 @@ export default function PhotoDetailPage() {
 
       if (photoData) setPhoto(photoData as Photo);
 
-      // 3. Controlla voto e prendi username
+      // 3. Controlla voto esistente
       if (user) {
-        // Prendi il TUO username per firmare la notifica
-        const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-        if (myProfile) setCurrentUsername(myProfile.username);
-
         const { data: voteData } = await supabase
           .from('votes')
           .select('id')
@@ -93,33 +88,7 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
-  // --- FUNZIONE PER INVIARE NOTIFICA (MANUALE) ---
-  async function sendNotification(type: 'like' | 'comment', message: string) {
-    if (!photo || !userId) return;
-    
-    // Cerca l'ID del proprietario della foto usando il nome autore (con ilike per ignorare maiuscole)
-    const { data: ownerProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .ilike('username', photo.author_name) // Uso ilike per sicurezza
-        .single();
-    
-    // Se troviamo il proprietario e NON sei tu stesso (niente auto-notifiche)
-    if (ownerProfile && ownerProfile.id !== userId) {
-        const { error } = await supabase.from('notifications').insert([{
-            user_id: ownerProfile.id, // A chi va
-            actor_name: currentUsername || "Un utente", // Chi sei tu
-            type: type,
-            photo_id: photo.id,
-            message: message, // Es: "ha messo Mi Piace a questa foto"
-            is_read: false
-        }]);
-        
-        if (error) console.error("Errore invio notifica:", error);
-    }
-  }
-
-  // --- GESTIONE LIKE ---
+  // --- GESTIONE LIKE (TOGGLE) ---
   async function handleLike() {
     if (!photo || !userId) return; 
 
@@ -136,25 +105,20 @@ export default function PhotoDetailPage() {
     }
 
     try {
-      // 1. Chiama il DB per il voto (Toggle)
-      const { data: action, error } = await supabase.rpc('toggle_vote', { 
+      // Chiama la funzione SQL.
+      // NOTA: Non serve inviare la notifica qui, il TRIGGER del database lo farà in automatico!
+      const { error } = await supabase.rpc('toggle_vote', { 
         photo_id_input: photo.id, 
         user_id_input: userId 
       });
 
       if (error) throw error;
 
-      // 2. INVIA NOTIFICA MANUALE (Solo se il like è stato AGGIUNTO)
-      if (action === 'added') {
-        await sendNotification('like', 'ha messo Mi Piace a questa foto.');
-      }
-
     } catch (error: any) {
         console.error("Errore Like:", error);
         setPhoto({ ...photo, likes: previousLikes });
         setHasVoted(previousHasVoted);
-        // Mostra l'errore REALE per capire cosa non va (es. function not found)
-        alert("Errore Like: " + error.message);
+        alert("Errore di connessione. Riprova.");
     }
   }
 
@@ -174,9 +138,7 @@ export default function PhotoDetailPage() {
       ]);
 
     if (!error) {
-      // Notifica manuale anche per i commenti
-      await sendNotification('comment', `ha commentato: "${newComment.substring(0, 20)}..."`);
-      
+      // NOTA: Anche qui, la notifica viene spedita automaticamente dal database!
       alert("Commento pubblicato!");
       window.location.reload(); 
     } else {
@@ -193,15 +155,15 @@ export default function PhotoDetailPage() {
   if (!photo) return <div className="min-h-screen bg-stone-600 flex items-center justify-center text-white">Foto non trovata.</div>;
 
   return (
-    // FIX SCROLL: h-screen e overflow-y-auto per mobile
+    // SFONDO CALDO (Stone 500/600) + FIX SCROLL MOBILE
     <main className="h-screen w-full bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white overflow-y-auto overflow-x-hidden">
       
-      {/* Sfondo Fissato */}
+      {/* Texture Fissata */}
       <div className="fixed inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde */}
+      {/* Luci Ambientali Calde Fissate */}
       <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
