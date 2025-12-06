@@ -112,8 +112,10 @@ export default function PhotoDetailPage() {
         .maybeSingle();
 
     // Se il proprietario esiste e non sei tu stesso
-    if (ownerProfile && ownerProfile.id !== userId) {
-        await supabase.from('notifications').insert([{
+    if (ownerProfile) {
+        if (ownerProfile.id === userId) return; // Non notificare se stessi
+
+        const { error } = await supabase.from('notifications').insert([{
             user_id: ownerProfile.id, 
             actor_name: actorName || "Un utente", 
             type: type,
@@ -121,6 +123,12 @@ export default function PhotoDetailPage() {
             message: message,
             is_read: false
         }]);
+        
+        if (error) {
+            console.error("Errore invio notifica:", error);
+            // Questo alert ti aiuterà a capire se il DB sta bloccando
+            alert("Attenzione: Notifica non inviata. Errore DB: " + error.message);
+        }
     }
   }
 
@@ -227,6 +235,8 @@ export default function PhotoDetailPage() {
               alt={photo.title} 
               className="w-full h-auto max-h-[80vh] object-contain rounded-xl" 
             />
+            
+            {/* WATERMARK FISSO */}
             <div className="absolute bottom-5 right-5 text-white/50 text-sm font-bold bg-black/50 p-2 rounded backdrop-blur-sm pointer-events-none select-none">
                 © {photo.author_name} - Photo Platform
             </div>
@@ -249,6 +259,7 @@ export default function PhotoDetailPage() {
           <div className="bg-stone-400/20 p-6 rounded-3xl border border-stone-400/30 backdrop-blur-xl">
             <h1 className="text-3xl font-bold mb-2 text-white">{photo.title}</h1>
             
+            {/* Link Profilo */}
             <p className="text-stone-200 text-sm mb-4">
               by <Link href={`/profile/${photo.author_name}`} className="font-bold text-white hover:text-amber-200 hover:underline transition cursor-pointer">{photo.author_name}</Link>
             </p>
@@ -258,6 +269,7 @@ export default function PhotoDetailPage() {
                 <span className="text-2xl font-bold text-white">{photo.likes || 0}</span>
             </div>
 
+            {/* SEZIONE ACQUISTO */}
             {photo.price > 0 && (
                 <div className="mt-6 border-t border-stone-500/50 pt-4">
                     <div className="flex justify-between items-center mb-3">
