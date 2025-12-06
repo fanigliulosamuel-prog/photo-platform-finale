@@ -28,6 +28,7 @@ export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [category, setCategory] = useState('Ritratti');
   const [uploading, setUploading] = useState(false);
 
@@ -42,6 +43,7 @@ export default function UploadPage() {
     async function getUserProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setUserId(user.id);
         const { data: profile } = await supabase
           .from('profiles')
           .select('username')
@@ -84,6 +86,7 @@ export default function UploadPage() {
           {
             title: title,
             author_name: author,
+            user_id: userId, // Salviamo l'ID utente per le notifiche
             category: category,
             url: publicUrl,
             camera_model: camera,
@@ -133,7 +136,7 @@ export default function UploadPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-stone-200 uppercase tracking-wider mb-2">Titolo Opera</label>
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-stone-500/40 border border-stone-400/50 rounded-xl p-3 text-white focus:border-amber-400/50 outline-none placeholder-stone-300" placeholder="Titolo" required/>
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-stone-500/40 border border-stone-400/50 rounded-xl p-3 text-white focus:border-amber-400/50 outline-none" placeholder="Titolo" required/>
             </div>
             <div>
               <label className="block text-xs font-bold text-stone-200 uppercase tracking-wider mb-2">Nome Fotografo</label>
