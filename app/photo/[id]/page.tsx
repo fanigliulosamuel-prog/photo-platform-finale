@@ -19,6 +19,7 @@ type Photo = {
   shutter_speed: string;
   iso: number;
   aperture: string;
+  user_id?: string;
 }
 
 type Comment = {
@@ -47,11 +48,10 @@ export default function PhotoDetailPage() {
       if (!id) return;
       const photoId = parseInt(id as string);
       
-      // 1. Utente loggato
       const { data: { user } } = await supabase.auth.getUser();
       setUserId(user ? user.id : null);
 
-      // 2. Carica Foto
+      // Foto
       const { data: photoData } = await supabase
         .from('photos')
         .select('*')
@@ -60,9 +60,8 @@ export default function PhotoDetailPage() {
 
       if (photoData) setPhoto(photoData as Photo);
 
-      // 3. Controlla voto esistente
+      // Info Utente e Voto
       if (user) {
-        // Prendi username corrente
         const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
         if (myProfile) setCurrentUsername(myProfile.username);
 
@@ -78,7 +77,7 @@ export default function PhotoDetailPage() {
         }
       }
 
-      // 4. Carica Commenti
+      // Commenti
       const { data: commentsData } = await supabase
         .from('comments')
         .select('*')
@@ -93,46 +92,49 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
-  // --- FUNZIONE MANUALE INVIO NOTIFICA ---
+  // --- FUNZIONE NOTIFICA SILENZIOSA ---
   async function sendNotification(type: 'like' | 'comment', message: string) {
     if (!photo || !userId) return;
 
-    // Recupera lo username aggiornato se manca
-    let actorName = currentUsername;
-    if (!actorName) {
-        const { data: p } = await supabase.from('profiles').select('username').eq('id', userId).single();
-        if (p) actorName = p.username;
-    }
-    
-    // Trova il proprietario della foto
-    const { data: ownerProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', photo.author_name)
-        .maybeSingle();
+    let recipientId = photo.user_id;
 
-    // Se il proprietario esiste e non sei tu stesso
-    if (ownerProfile) {
-        if (ownerProfile.id === userId) return; // Non notificare se stessi
+    // Fallback ID autore
+    if (!recipientId) {
+        const { data: ownerProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', photo.author_name)
+            .maybeSingle();
+        if (ownerProfile) recipientId = ownerProfile.id;
+    }
+
+    if (recipientId && recipientId !== userId) {
+        let actorName = currentUsername;
+        if (!actorName) {
+            const { data: p } = await supabase.from('profiles').select('username').eq('id', userId).single();
+            if (p) actorName = p.username;
+        }
 
         const { error } = await supabase.from('notifications').insert([{
-            user_id: ownerProfile.id, 
+            user_id: recipientId, 
             actor_name: actorName || "Un utente", 
             type: type,
             photo_id: photo.id,
             message: message,
             is_read: false
         }]);
-        
+
+        // FIX: Ignoriamo l'errore se è un duplicato (Codice 23505)
         if (error) {
-            console.error("Errore invio notifica:", error);
-            // Questo alert ti aiuterà a capire se il DB sta bloccando
-            alert("Attenzione: Notifica non inviata. Errore DB: " + error.message);
+            if (error.code !== '23505') {
+                console.error("Errore notifica reale:", error);
+            }
+            // Non mostriamo nessun alert all'utente, l'azione prosegue fluida
         }
     }
   }
 
-  // --- GESTIONE LIKE (TOGGLE) ---
+  // --- GESTIONE LIKE ---
   async function handleLike() {
     if (!photo || !userId) return; 
 
@@ -149,7 +151,6 @@ export default function PhotoDetailPage() {
     }
 
     try {
-      // Chiama la funzione SQL Toggle e recupera il risultato ('added' o 'removed')
       const { data: action, error } = await supabase.rpc('toggle_vote', { 
         photo_id_input: photo.id, 
         user_id_input: userId 
@@ -157,16 +158,17 @@ export default function PhotoDetailPage() {
 
       if (error) throw error;
 
-      // Se il like è stato aggiunto, invia la notifica manualmente
       if (action === 'added') {
-          await sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
+          // Invia notifica silenziosamente
+          sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
       }
 
     } catch (error: any) {
         console.error("Errore Like:", error);
         setPhoto({ ...photo, likes: previousLikes });
         setHasVoted(previousHasVoted);
-        alert("Errore di connessione. Riprova.");
+        // Alert solo se fallisce il voto, non la notifica
+        alert("Impossibile registrare il voto.");
     }
   }
 
@@ -186,9 +188,7 @@ export default function PhotoDetailPage() {
       ]);
 
     if (!error) {
-      // Invia notifica manuale per il commento
-      await sendNotification('comment', `ha commentato: "${newComment.substring(0, 20)}..."`);
-      
+      sendNotification('comment', `ha commentato: "${newComment.substring(0, 20)}..."`);
       alert("Commento pubblicato!");
       window.location.reload(); 
     } else {
@@ -207,12 +207,10 @@ export default function PhotoDetailPage() {
   return (
     <main className="h-screen w-full bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white overflow-y-auto overflow-x-hidden">
       
-      {/* Texture Fissata */}
       <div className="fixed inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde Fissate */}
       <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
