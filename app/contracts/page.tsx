@@ -24,13 +24,17 @@ export default function ContractsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white relative overflow-hidden">
+    // SFONDO CALDO (Stone 500/600)
+    <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
       
-      {/* Sfondo Aurora */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" 
+      {/* Texture Grana */}
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
-      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+      {/* Luci Ambientali Calde */}
+      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="relative z-10 p-8 max-w-7xl mx-auto flex flex-col md:flex-row gap-12 print:p-0 print:block">
         
@@ -38,54 +42,55 @@ export default function ContractsPage() {
         <div className="w-full md:w-1/3 space-y-8 print:hidden">
           
           <div>
-            <Link href="/dashboard" className="text-indigo-300 hover:text-white flex items-center gap-2 mb-6 transition">
+            <Link href="/dashboard" className="text-stone-200 hover:text-white flex items-center gap-2 mb-6 transition">
               ← Torna alla Dashboard
             </Link>
             <h1 className={`${playfair.className} text-4xl font-bold text-white mb-2`}>
               Crea Contratto
             </h1>
-            <p className="text-gray-400 text-sm">
+            <p className="text-stone-100 text-sm">
               Compila i campi per generare automaticamente un contratto professionale pronto per la firma.
             </p>
           </div>
 
-          <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-xl space-y-4 shadow-xl">
+          {/* Form Style Caldo */}
+          <div className="bg-stone-400/40 p-6 rounded-3xl border border-stone-300/50 backdrop-blur-xl space-y-4 shadow-xl">
             
             <div>
-              <label className="block text-xs font-bold text-indigo-300 uppercase mb-2">Il tuo Nome</label>
-              <input type="text" value={photographerName} onChange={e => setPhotographerName(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 outline-none" placeholder="Es. Mario Rossi" />
+              <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Il tuo Nome</label>
+              <input type="text" value={photographerName} onChange={e => setPhotographerName(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none" placeholder="Es. Mario Rossi" />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-indigo-300 uppercase mb-2">Nome Cliente</label>
-              <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 outline-none" placeholder="Es. Azienda SPA" />
+              <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Nome Cliente</label>
+              <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none" placeholder="Es. Azienda SPA" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-indigo-300 uppercase mb-2">Data Evento</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 outline-none" />
+                <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Data Evento</label>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-indigo-300 uppercase mb-2">Tipo Servizio</label>
-                <input type="text" value={eventType} onChange={e => setEventType(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 outline-none" placeholder="Es. Matrimonio" />
+                <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Tipo Servizio</label>
+                <input type="text" value={eventType} onChange={e => setEventType(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none" placeholder="Es. Matrimonio" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-indigo-300 uppercase mb-2">Prezzo Totale (€)</label>
-                <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 outline-none" placeholder="1000" />
+                <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Prezzo Totale (€)</label>
+                <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none" placeholder="1000" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-indigo-300 uppercase mb-2">Acconto (€)</label>
-                <input type="number" value={deposit} onChange={e => setDeposit(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 outline-none" placeholder="300" />
+                <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Acconto (€)</label>
+                <input type="number" value={deposit} onChange={e => setDeposit(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none" placeholder="300" />
               </div>
             </div>
 
           </div>
 
-          <button onClick={handlePrint} className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-[0_0_20px_rgba(99,102,241,0.4)] transition transform hover:scale-[1.02]">
+          <button onClick={handlePrint} className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-2xl shadow-lg transition transform hover:scale-[1.02]">
             🖨️ Stampa / Scarica PDF
           </button>
 
