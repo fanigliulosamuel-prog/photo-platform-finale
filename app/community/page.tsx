@@ -31,7 +31,6 @@ export default function CommunityPage() {
 
     // Filtra per città se l'utente ha scritto qualcosa
     if (searchCity.trim() !== "") {
-      // Nota: usiamo .ilike per ignorare maiuscole/minuscole e % per la ricerca parziale
       query = query.ilike('city', `%${searchCity}%`);
     }
 
@@ -55,6 +54,30 @@ export default function CommunityPage() {
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
+
+      {/* --- MENU DI NAVIGAZIONE --- */}
+      <nav className="relative z-20 p-6 flex flex-wrap justify-between items-center max-w-7xl mx-auto w-full border-b border-white/5 gap-4">
+        <Link href="/" className={`${playfair.className} text-2xl font-bold text-white tracking-tight hover:text-indigo-300 transition`}>
+           Photo Platform
+        </Link>
+        <div className="flex items-center gap-2 sm:gap-4">
+            <Link href="/dashboard">
+                <button className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-xs sm:text-sm font-bold text-white transition backdrop-blur-md flex items-center gap-2">
+                  🏠 Dashboard
+                </button>
+            </Link>
+            <Link href="/explore">
+                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs sm:text-sm font-bold text-indigo-200 hover:text-white transition">
+                  📷 Gallery
+                </button>
+            </Link>
+            <Link href="/">
+                <button className="hidden sm:block px-4 py-2 text-xs sm:text-sm font-bold text-indigo-200 hover:text-white transition">
+                  Home
+                </button>
+            </Link>
+        </div>
+      </nav>
 
       <div className="relative z-10 p-8 md:p-12 max-w-7xl mx-auto">
         
