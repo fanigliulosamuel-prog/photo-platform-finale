@@ -65,29 +65,26 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white flex items-center justify-center p-4 relative overflow-hidden">
       
-      {/* --- SFONDO FOTOGRAFICO IMMERSIVO (Stile Home Page) --- */}
-      <div 
-        className="absolute inset-0 z-0"
-        style={{
-          // Un'immagine elegante, scura e minimale (Paesaggio Notturno/Montagne)
-          backgroundImage: 'url("https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2670&auto=format&fit=crop")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-         {/* Velo scuro e leggera sfocatura per eleganza e leggibilità */}
-         <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
+      {/* --- SFONDO TEXTURE & LUCI (Stile Aurora Minimal) --- */}
+      
+      {/* Texture Grana (Effetto Pellicola) */}
+      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
+      {/* Luci Ambientali Soffuse */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
       {/* CARD CENTRALE (Glassmorphism raffinato) */}
-      <div className="relative z-10 w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
+      <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
         
         <h2 className="text-4xl font-bold text-white mb-2 text-center tracking-tight">
           {isSignUp ? "Unisciti a Noi" : "Bentornato"}
         </h2>
-        <p className="text-gray-300 text-center mb-8 font-light">
+        <p className="text-indigo-200 text-center mb-8 font-light">
           {isSignUp ? "Crea il tuo portfolio e accedi subito." : "Accedi per gestire i tuoi scatti."}
         </p>
 
@@ -95,25 +92,25 @@ export default function LoginPage() {
         <form onSubmit={handleAuth} className="space-y-5">
           
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Email</label>
+            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Email</label>
             <input 
               type="email" 
               placeholder="nome@esempio.com" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-white focus:bg-white/10 outline-none transition" 
+              className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 focus:bg-black/40 outline-none transition" 
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Password</label>
+            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Password</label>
             <input 
               type="password" 
               placeholder="••••••••" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-white focus:bg-white/10 outline-none transition" 
+              className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 focus:bg-black/40 outline-none transition" 
               required
             />
           </div>
@@ -122,19 +119,19 @@ export default function LoginPage() {
           {isSignUp && (
             <div className="animate-fade-in space-y-5">
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Username</label>
-                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-white focus:bg-white/10 outline-none transition" required={isSignUp}/>
+                <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Username</label>
+                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 focus:bg-black/40 outline-none transition" required={isSignUp}/>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Città</label>
-                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-white focus:bg-white/10 outline-none transition" required={isSignUp}/>
+                <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Città</label>
+                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 focus:bg-black/40 outline-none transition" required={isSignUp}/>
               </div>
             </div>
           )}
 
           <button 
             disabled={loading}
-            className="w-full py-4 bg-white text-black font-bold rounded-xl hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition transform disabled:opacity-50 mt-6"
+            className="w-full py-4 bg-white text-indigo-950 font-bold rounded-xl hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition transform disabled:opacity-50 mt-6"
           >
             {loading ? "Attendi..." : (isSignUp ? "Registrati Ora" : "Accedi")}
           </button>
@@ -146,13 +143,13 @@ export default function LoginPage() {
           {isSignUp ? "Hai già un account?" : "Non hai un account?"}{' '}
           <button 
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-white font-bold cursor-pointer hover:underline transition"
+            className="text-white font-bold cursor-pointer hover:text-indigo-300 hover:underline transition"
           >
             {isSignUp ? "Accedi qui" : "Registrati qui"}
           </button>
         </p>
 
-        <div className="mt-6 text-center border-t border-white/10 pt-4">
+        <div className="mt-6 text-center border-t border-white/5 pt-4">
           <Link href="/" className="text-sm text-gray-500 hover:text-white transition flex items-center justify-center gap-2">
             ← Torna alla Home
           </Link>
