@@ -65,13 +65,13 @@ export default function LoginPage() {
   }
 
   return (
-    // MODIFICA QUI: Sfondo PIÙ CHIARO (stone-800)
+    // Sfondo Caldo (Stone/Pietra chiara)
     <main className="min-h-screen bg-gradient-to-br from-stone-800 via-stone-700 to-stone-800 text-white flex items-center justify-center p-4 relative overflow-hidden">
       
-      {/* --- SFONDO TEXTURE & LUCI (Stile Earthy/Minimal) --- */}
+      {/* --- SFONDO TEXTURE & LUCI (Grana Molto Più Sottile) --- */}
       
-      {/* Texture Grana (Effetto Pellicola) */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" 
+      {/* Texture Grana (Opacità ridotta da 20% a 5%) */}
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
