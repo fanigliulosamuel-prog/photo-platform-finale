@@ -60,7 +60,7 @@ export default function PhotoDetailPage() {
 
       if (photoData) setPhoto(photoData as Photo);
 
-      // 3. Controlla se l'utente ha già votato
+      // 3. Controlla voto
       if (user) {
         const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
         if (myProfile) setCurrentUsername(myProfile.username);
@@ -92,15 +92,13 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
-  // --- GESTIONE LIKE (Usa la funzione SQL vote_photo) ---
+  // --- GESTIONE LIKE ---
   async function handleLike() {
     if (!photo || !userId) return; 
 
-    // Salva stato precedente per eventuale rollback
     const previousLikes = photo.likes;
     const previousHasVoted = hasVoted;
 
-    // 1. UI Ottimistica
     if (hasVoted) {
         setPhoto({ ...photo, likes: Math.max(0, (photo.likes || 0) - 1) });
         setHasVoted(false);
@@ -110,7 +108,7 @@ export default function PhotoDetailPage() {
     }
 
     try {
-      const { data: success, error } = await supabase.rpc('toggle_vote', { 
+      const { data: action, error } = await supabase.rpc('toggle_vote', { 
         photo_id_input: photo.id, 
         user_id_input: userId 
       });
@@ -119,8 +117,8 @@ export default function PhotoDetailPage() {
 
     } catch (error: any) {
         console.error("Errore Like:", error);
-        setHasVoted(previousHasVoted); 
         setPhoto({ ...photo, likes: previousLikes });
+        setHasVoted(previousHasVoted);
         alert("Errore di connessione. Riprova.");
     }
   }
@@ -157,29 +155,39 @@ export default function PhotoDetailPage() {
   if (!photo) return <div className="min-h-screen bg-stone-600 flex items-center justify-center text-white">Foto non trovata.</div>;
 
   return (
-    // SFONDO CALDO (Stone 500/600)
-    <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-y-auto">
+    // FIX SCROLL: Rimosso overflow-y-auto, messo overflow-x-hidden per evitare problemi orizzontali
+    <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-x-hidden">
       
-      {/* Texture Grana */}
-      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
+      {/* Sfondo */}
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+      </div>
 
       {/* Luci Ambientali Calde */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
       <nav className="relative z-20 p-8 flex justify-between items-center max-w-7xl mx-auto w-full">
-        <Link href="/explore" className="flex items-center gap-2 text-stone-200 hover:text-white transition bg-stone-400/20 px-5 py-2 rounded-full border border-stone-400/30 backdrop-blur-md">← Indietro</Link>
-        <span className="text-amber-200 font-bold tracking-widest text-xs uppercase border border-amber-400/30 px-4 py-2 rounded-full bg-amber-900/40">{photo.category}</span>
+        <Link href="/explore" className="flex items-center gap-2 text-stone-200 hover:text-white transition bg-stone-400/20 px-5 py-2 rounded-full border border-stone-400/30 backdrop-blur-md">
+          ← Indietro
+        </Link>
+        <span className="text-amber-200 font-bold tracking-widest text-xs uppercase border border-amber-400/30 px-4 py-2 rounded-full bg-amber-900/40">
+          {photo.category}
+        </span>
       </nav>
 
       <div className="relative z-10 flex flex-col md:flex-row max-w-7xl mx-auto w-full gap-10 p-6 pb-20 justify-center items-start">
         
-        {/* FOTO */}
-        <div className="flex-1 w-full relative sticky top-10">
+        {/* FOTO - FIX SCROLL: Rimosso 'sticky' su mobile, lasciato 'md:sticky' su desktop */}
+        <div className="flex-1 w-full relative md:sticky md:top-10">
            <div className="relative bg-stone-700/50 rounded-2xl border border-stone-500/30 p-1 backdrop-blur-sm shadow-2xl">
-            <img src={photo.url} alt={photo.title} className="w-full h-auto max-h-[80vh] object-contain rounded-xl" />
+            <img 
+              src={photo.url} 
+              alt={photo.title} 
+              className="w-full h-auto max-h-[80vh] object-contain rounded-xl" 
+            />
             
-            {/* WATERMARK */}
+            {/* WATERMARK FISSO */}
             <div className="absolute bottom-5 right-5 text-white/50 text-sm font-bold bg-black/50 p-2 rounded backdrop-blur-sm pointer-events-none select-none">
                 © {photo.author_name} - Photo Platform
             </div>
@@ -201,6 +209,8 @@ export default function PhotoDetailPage() {
         <div className="w-full md:w-96 flex flex-col gap-6">
           <div className="bg-stone-400/20 p-6 rounded-3xl border border-stone-400/30 backdrop-blur-xl">
             <h1 className="text-3xl font-bold mb-2 text-white">{photo.title}</h1>
+            
+            {/* Link Profilo */}
             <p className="text-stone-200 text-sm mb-4">
               by <Link href={`/profile/${photo.author_name}`} className="font-bold text-white hover:text-amber-200 hover:underline transition cursor-pointer">{photo.author_name}</Link>
             </p>
@@ -210,14 +220,22 @@ export default function PhotoDetailPage() {
                 <span className="text-2xl font-bold text-white">{photo.likes || 0}</span>
             </div>
 
+            {/* SEZIONE ACQUISTO */}
             {photo.price > 0 && (
                 <div className="mt-6 border-t border-stone-500/50 pt-4">
-                    <div className="flex justify-between items-center mb-3"><span className="text-amber-200 font-bold uppercase text-xs tracking-wider">Acquista Licenza</span><span className="text-3xl font-bold text-white">€ {photo.price.toFixed(2)}</span></div>
-                    <button onClick={handlePurchase} className="w-full py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 shadow-lg transition transform hover:scale-105">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-amber-200 font-bold uppercase text-xs tracking-wider">Acquista Licenza</span>
+                        <span className="text-3xl font-bold text-white">€ {photo.price.toFixed(2)}</span>
+                    </div>
+                    <button 
+                        onClick={handlePurchase}
+                        className="w-full py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-500 shadow-lg transition transform hover:scale-105"
+                    >
                         Acquista 🛍️
                     </button>
                 </div>
             )}
+
 
             <button 
               onClick={handleLike}
@@ -256,11 +274,26 @@ export default function PhotoDetailPage() {
               }
             </div>
             <form onSubmit={handlePostComment} className="flex flex-col gap-3 border-t border-stone-600/30 pt-4">
-              <input type="text" placeholder="Il tuo nome..." value={commentAuthor} onChange={(e) => setCommentAuthor(e.target.value)} className="bg-stone-700/50 border border-stone-500/50 rounded-lg p-3 text-sm text-white focus:border-amber-400/50 outline-none"/>
-              <textarea placeholder="Scrivi una critica..." value={newComment} onChange={(e) => setNewComment(e.target.value)} className="bg-stone-700/50 border border-stone-500/50 rounded-lg p-3 text-sm text-white focus:border-amber-400/50 outline-none h-20 resize-none"/>
-              <button className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg transition text-sm">Invia</button>
+              <input 
+                type="text" 
+                placeholder="Il tuo nome..." 
+                value={commentAuthor} 
+                onChange={(e) => setCommentAuthor(e.target.value)} 
+                className="bg-stone-700/50 border border-stone-500/50 rounded-lg p-3 text-sm text-white focus:border-amber-400/50 outline-none"
+              />
+              <textarea 
+                placeholder="Scrivi una critica costruttiva..." 
+                value={newComment} 
+                onChange={(e) => setNewComment(e.target.value)} 
+                className="bg-stone-700/50 border border-stone-500/50 rounded-lg p-3 text-sm text-white focus:border-amber-400/50 outline-none h-20 resize-none"
+              />
+              <button className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg transition text-sm">
+                Invia Commento
+              </button>
             </form>
+
           </div>
+
         </div>
 
       </div>
