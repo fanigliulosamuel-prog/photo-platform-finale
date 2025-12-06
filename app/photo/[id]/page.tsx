@@ -40,6 +40,7 @@ export default function PhotoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [hasVoted, setHasVoted] = useState(false); 
   const [userId, setUserId] = useState<string | null>(null);
+  const [currentUsername, setCurrentUsername] = useState(""); 
 
   useEffect(() => {
     async function fetchData() {
@@ -61,6 +62,10 @@ export default function PhotoDetailPage() {
 
       // 3. Controlla voto esistente
       if (user) {
+        // Prendi username corrente
+        const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+        if (myProfile) setCurrentUsername(myProfile.username);
+
         const { data: voteData } = await supabase
           .from('votes')
           .select('id')
@@ -88,6 +93,37 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
+  // --- FUNZIONE MANUALE INVIO NOTIFICA ---
+  async function sendNotification(type: 'like' | 'comment', message: string) {
+    if (!photo || !userId) return;
+
+    // Recupera lo username aggiornato se manca
+    let actorName = currentUsername;
+    if (!actorName) {
+        const { data: p } = await supabase.from('profiles').select('username').eq('id', userId).single();
+        if (p) actorName = p.username;
+    }
+    
+    // Trova il proprietario della foto
+    const { data: ownerProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', photo.author_name)
+        .maybeSingle();
+
+    // Se il proprietario esiste e non sei tu stesso
+    if (ownerProfile && ownerProfile.id !== userId) {
+        await supabase.from('notifications').insert([{
+            user_id: ownerProfile.id, 
+            actor_name: actorName || "Un utente", 
+            type: type,
+            photo_id: photo.id,
+            message: message,
+            is_read: false
+        }]);
+    }
+  }
+
   // --- GESTIONE LIKE (TOGGLE) ---
   async function handleLike() {
     if (!photo || !userId) return; 
@@ -105,14 +141,18 @@ export default function PhotoDetailPage() {
     }
 
     try {
-      // Chiama la funzione SQL.
-      // NOTA: Non serve inviare la notifica qui, il TRIGGER del database lo farà in automatico!
-      const { error } = await supabase.rpc('toggle_vote', { 
+      // Chiama la funzione SQL Toggle e recupera il risultato ('added' o 'removed')
+      const { data: action, error } = await supabase.rpc('toggle_vote', { 
         photo_id_input: photo.id, 
         user_id_input: userId 
       });
 
       if (error) throw error;
+
+      // Se il like è stato aggiunto, invia la notifica manualmente
+      if (action === 'added') {
+          await sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
+      }
 
     } catch (error: any) {
         console.error("Errore Like:", error);
@@ -138,7 +178,9 @@ export default function PhotoDetailPage() {
       ]);
 
     if (!error) {
-      // NOTA: Anche qui, la notifica viene spedita automaticamente dal database!
+      // Invia notifica manuale per il commento
+      await sendNotification('comment', `ha commentato: "${newComment.substring(0, 20)}..."`);
+      
       alert("Commento pubblicato!");
       window.location.reload(); 
     } else {
@@ -155,7 +197,6 @@ export default function PhotoDetailPage() {
   if (!photo) return <div className="min-h-screen bg-stone-600 flex items-center justify-center text-white">Foto non trovata.</div>;
 
   return (
-    // SFONDO CALDO (Stone 500/600) + FIX SCROLL MOBILE
     <main className="h-screen w-full bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white overflow-y-auto overflow-x-hidden">
       
       {/* Texture Fissata */}
@@ -186,8 +227,6 @@ export default function PhotoDetailPage() {
               alt={photo.title} 
               className="w-full h-auto max-h-[80vh] object-contain rounded-xl" 
             />
-            
-            {/* WATERMARK FISSO */}
             <div className="absolute bottom-5 right-5 text-white/50 text-sm font-bold bg-black/50 p-2 rounded backdrop-blur-sm pointer-events-none select-none">
                 © {photo.author_name} - Photo Platform
             </div>
@@ -210,7 +249,6 @@ export default function PhotoDetailPage() {
           <div className="bg-stone-400/20 p-6 rounded-3xl border border-stone-400/30 backdrop-blur-xl">
             <h1 className="text-3xl font-bold mb-2 text-white">{photo.title}</h1>
             
-            {/* Link Profilo */}
             <p className="text-stone-200 text-sm mb-4">
               by <Link href={`/profile/${photo.author_name}`} className="font-bold text-white hover:text-amber-200 hover:underline transition cursor-pointer">{photo.author_name}</Link>
             </p>
@@ -220,7 +258,6 @@ export default function PhotoDetailPage() {
                 <span className="text-2xl font-bold text-white">{photo.likes || 0}</span>
             </div>
 
-            {/* SEZIONE ACQUISTO */}
             {photo.price > 0 && (
                 <div className="mt-6 border-t border-stone-500/50 pt-4">
                     <div className="flex justify-between items-center mb-3">
