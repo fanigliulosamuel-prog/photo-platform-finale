@@ -65,8 +65,8 @@ export default function LoginPage() {
   }
 
   return (
-    // MODIFICA QUI: Sfondo Stone (Pietra/Marrone Scuro) invece di Slate (Blu)
-    <main className="min-h-screen bg-gradient-to-br from-stone-950 via-[#2c2520] to-stone-950 text-white flex items-center justify-center p-4 relative overflow-hidden">
+    // MODIFICA QUI: Sfondo PIÙ CHIARO (stone-800)
+    <main className="min-h-screen bg-gradient-to-br from-stone-800 via-stone-700 to-stone-800 text-white flex items-center justify-center p-4 relative overflow-hidden">
       
       {/* --- SFONDO TEXTURE & LUCI (Stile Earthy/Minimal) --- */}
       
@@ -75,17 +75,17 @@ export default function LoginPage() {
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde (Marrone Chiaro / Ambra) */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-700/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-900/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
+      {/* Luci Ambientali Calde (Ambra) */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-700/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
-      {/* CARD CENTRALE (Glassmorphism caldo) */}
-      <div className="relative z-10 w-full max-w-md bg-stone-900/40 backdrop-blur-xl border border-stone-700/30 p-8 rounded-3xl shadow-2xl">
+      {/* CARD CENTRALE (Glassmorphism caldo e più luminoso) */}
+      <div className="relative z-10 w-full max-w-md bg-stone-700/60 backdrop-blur-xl border border-stone-500/50 p-8 rounded-3xl shadow-2xl">
         
         <h2 className="text-4xl font-bold text-white mb-2 text-center tracking-tight">
           {isSignUp ? "Unisciti a Noi" : "Bentornato"}
         </h2>
-        <p className="text-stone-300 text-center mb-8 font-light">
+        <p className="text-stone-200 text-center mb-8 font-light">
           {isSignUp ? "Crea il tuo portfolio e accedi subito." : "Accedi per gestire i tuoi scatti."}
         </p>
 
@@ -93,25 +93,25 @@ export default function LoginPage() {
         <form onSubmit={handleAuth} className="space-y-5">
           
           <div>
-            <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Email</label>
+            <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-2">Email</label>
             <input 
               type="email" 
               placeholder="nome@esempio.com" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
-              className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl p-4 text-white placeholder-stone-600 focus:border-amber-500/50 focus:bg-stone-800 outline-none transition" 
+              className="w-full bg-stone-700/50 border border-stone-600/50 rounded-xl p-4 text-white placeholder-stone-400 focus:border-amber-400/50 focus:bg-stone-700 outline-none transition" 
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Password</label>
+            <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-2">Password</label>
             <input 
               type="password" 
               placeholder="••••••••" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
-              className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl p-4 text-white placeholder-stone-600 focus:border-amber-500/50 focus:bg-stone-800 outline-none transition" 
+              className="w-full bg-stone-700/50 border border-stone-600/50 rounded-xl p-4 text-white placeholder-stone-400 focus:border-amber-400/50 focus:bg-stone-700 outline-none transition" 
               required
             />
           </div>
@@ -120,19 +120,19 @@ export default function LoginPage() {
           {isSignUp && (
             <div className="animate-fade-in space-y-5">
               <div>
-                <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Username</label>
-                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl p-4 text-white placeholder-stone-600 focus:border-amber-500/50 focus:bg-stone-800 outline-none transition" required={isSignUp}/>
+                <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-2">Username</label>
+                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-stone-700/50 border border-stone-600/50 rounded-xl p-4 text-white placeholder-stone-400 focus:border-amber-400/50 focus:bg-stone-700 outline-none transition" required={isSignUp}/>
               </div>
               <div>
-                <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Città</label>
-                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl p-4 text-white placeholder-stone-600 focus:border-amber-500/50 focus:bg-stone-800 outline-none transition" required={isSignUp}/>
+                <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-2">Città</label>
+                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-stone-700/50 border border-stone-600/50 rounded-xl p-4 text-white placeholder-stone-400 focus:border-amber-400/50 focus:bg-stone-700 outline-none transition" required={isSignUp}/>
               </div>
             </div>
           )}
 
           <button 
             disabled={loading}
-            className="w-full py-4 bg-stone-100 text-stone-900 font-bold rounded-xl hover:bg-white hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition transform disabled:opacity-50 mt-6"
+            className="w-full py-4 bg-stone-100 text-stone-900 font-bold rounded-xl hover:bg-white hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] transition transform disabled:opacity-50 mt-6"
           >
             {loading ? "Attendi..." : (isSignUp ? "Registrati Ora" : "Accedi")}
           </button>
