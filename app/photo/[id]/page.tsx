@@ -40,8 +40,8 @@ export default function PhotoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [hasVoted, setHasVoted] = useState(false); 
   const [userId, setUserId] = useState<string | null>(null);
-  const [currentUsername, setCurrentUsername] = useState(""); 
 
+  // Carica Foto, Commenti e Stato Voto
   useEffect(() => {
     async function fetchData() {
       if (!id) return;
@@ -62,10 +62,6 @@ export default function PhotoDetailPage() {
 
       // 3. Controlla se l'utente ha già votato
       if (user) {
-        // Prendi username
-        const { data: myProfile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-        if (myProfile) setCurrentUsername(myProfile.username);
-
         const { data: voteData } = await supabase
           .from('votes')
           .select('id')
@@ -78,7 +74,7 @@ export default function PhotoDetailPage() {
         }
       }
 
-      // 4. Commenti
+      // 4. Carica Commenti
       const { data: commentsData } = await supabase
         .from('comments')
         .select('*')
@@ -93,75 +89,60 @@ export default function PhotoDetailPage() {
     fetchData();
   }, [id]);
 
-  // Notifiche
-  async function sendNotification(type: 'like' | 'comment', message: string) {
-    if (!photo) return;
-    const { data: ownerProfile } = await supabase.from('profiles').select('id').eq('username', photo.author_name).single();
-    
-    if (ownerProfile && ownerProfile.id !== userId) {
-        await supabase.from('notifications').insert([{
-            user_id: ownerProfile.id, 
-            actor_name: currentUsername || "Un utente", 
-            type: type,
-            photo_id: photo.id,
-            message: message
-        }]);
-    }
-  }
-
-  // --- NUOVA GESTIONE LIKE (TOGGLE / INSTAGRAM STYLE) ---
+  // --- GESTIONE LIKE (Usa la funzione SQL vote_photo) ---
   async function handleLike() {
-    if (!photo || !userId) return; 
+    if (!photo || !userId || hasVoted) return; 
 
-    // Salva lo stato precedente per eventuale rollback (se il server fallisce)
-    const previousLikes = photo.likes;
-    const previousHasVoted = hasVoted;
-
-    // 1. UI Ottimistica: Aggiorna subito lo schermo (sembra istantaneo)
-    if (hasVoted) {
-        // Se aveva votato -> Togli il voto visivamente
-        setPhoto({ ...photo, likes: Math.max(0, (photo.likes || 0) - 1) });
-        setHasVoted(false);
-    } else {
-        // Se non aveva votato -> Aggiungi il voto visivamente
-        setPhoto({ ...photo, likes: (photo.likes || 0) + 1 });
-        setHasVoted(true);
-    }
+    // Ottimismo UI: Aggiorna subito il pulsante per feedback veloce
+    setHasVoted(true); 
 
     try {
-      // 2. Chiama la funzione SQL 'toggle_vote' che fa il lavoro sporco nel database
-      const { data: action, error } = await supabase.rpc('toggle_vote', { 
+      // Chiama la funzione SQL.
+      // NOTA: Non serve inviare la notifica qui, il TRIGGER del database lo farà in automatico!
+      const { data: success, error } = await supabase.rpc('vote_photo', { 
         photo_id_input: photo.id, 
         user_id_input: userId 
       });
 
       if (error) throw error;
 
-      // 3. Gestione Notifica (solo se è stato aggiunto)
-      if (action === 'added') {
-        await sendNotification('like', 'ha messo Mi Piace al tuo scatto.');
+      if (success) {
+        // Se il voto è stato accettato, incrementa il numero
+        setPhoto({ ...photo, likes: (photo.likes || 0) + 1 });
+      } else {
+        // Se ritorna false, il voto c'era già (nessun incremento)
+        alert("Il tuo voto è già registrato.");
       }
 
     } catch (error: any) {
-        console.error("Errore Toggle Like:", error);
-        // Se il server fallisce, rimetti tutto com'era prima (rollback)
-        setPhoto({ ...photo, likes: previousLikes });
-        setHasVoted(previousHasVoted);
-        // Mostra l'errore reale per capire cosa succede
-        alert("Errore Like: " + (error.message || error.toString()));
+        console.error("Errore Like:", error);
+        setHasVoted(false); // Annulla in caso di errore
+        alert("Errore di connessione. Riprova.");
     }
   }
 
-  // --- RESTO DEL CODICE ---
+  // --- GESTIONE COMMENTI ---
   async function handlePostComment(e: React.FormEvent) {
     e.preventDefault();
     if (!newComment || !commentAuthor || !photo) return alert("Scrivi un nome e un commento!");
-    const { error } = await supabase.from('comments').insert([{ text: newComment, author: commentAuthor, photo_id: photo.id }]);
+
+    const { error } = await supabase
+      .from('comments')
+      .insert([
+        {
+          text: newComment,
+          author: commentAuthor,
+          photo_id: photo.id
+        }
+      ]);
+
     if (!error) {
-      await sendNotification('comment', `ha commentato: "${newComment.substring(0, 20)}..."`);
+      // NOTA: Anche qui, la notifica viene spedita automaticamente dal database!
       alert("Commento pubblicato!");
       window.location.reload(); 
-    } else { alert("Errore nell'invio del commento"); }
+    } else {
+      alert("Errore nell'invio del commento");
+    }
   }
   
   const handlePurchase = () => {
@@ -220,10 +201,10 @@ export default function PhotoDetailPage() {
             )}
             <button 
               onClick={handleLike}
-              disabled={!userId} 
-              className={`w-full py-3 mt-4 font-bold rounded-xl transition transform flex items-center justify-center gap-2 ${!userId ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : hasVoted ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg scale-105' : 'bg-white text-indigo-950 hover:scale-[1.02] shadow-lg'}`}
+              disabled={!userId || hasVoted} 
+              className={`w-full py-3 mt-4 font-bold rounded-xl transition transform flex items-center justify-center gap-2 ${!userId ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : hasVoted ? 'bg-indigo-900/50 text-indigo-300 border border-indigo-500/50 cursor-not-allowed' : 'bg-white text-indigo-950 hover:scale-[1.02] shadow-lg'}`}
             >
-              {userId ? (hasVoted ? "❤️ Ti piace" : "🤍 Mi piace") : "Accedi per Votare"}
+              {userId ? (hasVoted ? "✅ Voto Registrato" : "❤️ Lascia un Like") : "Accedi per Votare"}
             </button>
             {!userId && <p className="text-xs text-center text-gray-500 mt-2">Devi essere registrato per votare. <Link href="/login" className="text-white hover:underline">Accedi</Link></p>}
           </div>
