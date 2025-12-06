@@ -10,8 +10,8 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState(''); // NUOVO campo
-  const [city, setCity] = useState(''); // NUOVO campo
+  const [username, setUsername] = useState(''); 
+  const [city, setCity] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false); 
@@ -32,14 +32,13 @@ export default function LoginPage() {
 
         if (error) throw error;
         
-        // --- SECONDA FASE: CREAZIONE PROFILO AUTOMATICA ---
+        // Creazione Profilo Automatica
         if (data.user) {
             const { error: profileError } = await supabase.from('profiles').insert([
                 {
-                    id: data.user.id, // L'ID deve corrispondere all'utente appena creato
+                    id: data.user.id, 
                     username: username,
                     city: city,
-                    // avatar_url e bio verranno aggiunti dopo in settings
                 }
             ]);
             
@@ -47,7 +46,7 @@ export default function LoginPage() {
         }
 
         alert("Registrazione completata! Puoi accedere subito.");
-        router.push('/dashboard'); // Porta direttamente alla dashboard dopo la creazione del profilo
+        router.push('/dashboard'); 
         
       } else {
         // --- LOGIN ---
@@ -66,58 +65,76 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a1b4b] to-slate-900 text-white flex items-center justify-center p-4 relative overflow-hidden">
+    <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       
-      {/* Texture Sfondo */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay" 
-           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+      {/* --- SFONDO FOTOGRAFICO IMMERSIVO (Stile Home Page) --- */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          // Un'immagine elegante, scura e minimale (Paesaggio Notturno/Montagne)
+          backgroundImage: 'url("https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2670&auto=format&fit=crop")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+         {/* Velo scuro e leggera sfocatura per eleganza e leggibilità */}
+         <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
       </div>
 
-      {/* Luci Ambientali */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/30 rounded-full blur-[120px] animate-pulse-slow"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
-
-      {/* CARD CENTRALE */}
-      <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
+      {/* CARD CENTRALE (Glassmorphism raffinato) */}
+      <div className="relative z-10 w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
         
-        <h2 className="text-4xl font-bold text-white mb-2 text-center">
+        <h2 className="text-4xl font-bold text-white mb-2 text-center tracking-tight">
           {isSignUp ? "Unisciti a Noi" : "Bentornato"}
         </h2>
-        <p className="text-indigo-200 text-center mb-8">
-          {isSignUp ? "Crea il tuo profilo e accedi subito." : "Accedi per gestire i tuoi scatti."}
+        <p className="text-gray-300 text-center mb-8 font-light">
+          {isSignUp ? "Crea il tuo portfolio e accedi subito." : "Accedi per gestire i tuoi scatti."}
         </p>
 
         {/* Form */}
         <form onSubmit={handleAuth} className="space-y-5">
           
-          {/* Campi Email e Password */}
           <div>
-            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Email</label>
-            <input type="email" placeholder="nome@esempio.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 outline-none transition" required/>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Email</label>
+            <input 
+              type="email" 
+              placeholder="nome@esempio.com" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-white focus:bg-white/10 outline-none transition" 
+              required
+            />
           </div>
+
           <div>
-            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Password</label>
-            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 outline-none transition" required/>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Password</label>
+            <input 
+              type="password" 
+              placeholder="••••••••" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-white focus:bg-white/10 outline-none transition" 
+              required
+            />
           </div>
           
           {/* CAMPI EXTRA PER LA REGISTRAZIONE */}
           {isSignUp && (
-            <>
+            <div className="animate-fade-in space-y-5">
               <div>
-                <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Username / Nome d'Arte</label>
-                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 outline-none transition" required={isSignUp}/>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Username</label>
+                <input type="text" placeholder="Es. PhotoAlex" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-white focus:bg-white/10 outline-none transition" required={isSignUp}/>
               </div>
               <div>
-                <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Città (per la Mappa)</label>
-                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-indigo-500 outline-none transition" required={isSignUp}/>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Città</label>
+                <input type="text" placeholder="Es. Roma" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:border-white focus:bg-white/10 outline-none transition" required={isSignUp}/>
               </div>
-            </>
+            </div>
           )}
-
 
           <button 
             disabled={loading}
-            className="w-full py-4 bg-white text-indigo-950 font-bold rounded-xl hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition transform disabled:opacity-50 mt-4"
+            className="w-full py-4 bg-white text-black font-bold rounded-xl hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition transform disabled:opacity-50 mt-6"
           >
             {loading ? "Attendi..." : (isSignUp ? "Registrati Ora" : "Accedi")}
           </button>
@@ -125,26 +142,25 @@ export default function LoginPage() {
         </form>
 
         {/* Toggle Login/Registrati */}
-        <p className="mt-6 text-center text-gray-400 text-sm">
+        <p className="mt-8 text-center text-gray-400 text-sm">
           {isSignUp ? "Hai già un account?" : "Non hai un account?"}{' '}
           <button 
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-white font-bold cursor-pointer hover:text-indigo-300 hover:underline transition"
+            className="text-white font-bold cursor-pointer hover:underline transition"
           >
             {isSignUp ? "Accedi qui" : "Registrati qui"}
           </button>
         </p>
 
-        <div className="mt-6 text-center border-t border-white/5 pt-4">
+        <div className="mt-6 text-center border-t border-white/10 pt-4">
           <Link href="/" className="text-sm text-gray-500 hover:text-white transition flex items-center justify-center gap-2">
             ← Torna alla Home
           </Link>
         </div>
         
-        {/* Link Legali nel Footer */}
-        <div className="mt-8 pt-4 border-t border-white/10 text-center text-xs text-gray-500 space-x-4">
-          <Link href="/legal/privacy" className="hover:text-white transition">Privacy Policy</Link>
-          <Link href="/legal/terms" className="hover:text-white transition">Termini d'Uso</Link>
+        <div className="mt-4 text-center text-xs text-gray-600 space-x-4">
+          <Link href="/legal/privacy" className="hover:text-gray-400 transition">Privacy Policy</Link>
+          <Link href="/legal/terms" className="hover:text-gray-400 transition">Termini</Link>
         </div>
 
       </div>
