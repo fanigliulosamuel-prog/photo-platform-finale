@@ -17,23 +17,29 @@ type Photo = {
   likes: number;
 }
 
+// Nuovo tipo per i follower
+type Follower = {
+    id: string;
+    username: string;
+    avatar_url: string;
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userPhotos, setUserPhotos] = useState<Photo[]>([]);
+  const [followers, setFollowers] = useState<Follower[]>([]); // Stato per la lista follower
   const [loading, setLoading] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Stato per il menu mobile
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  // Calcola statistiche reali (basate sulle foto dell'utente)
   const totalLikes = userPhotos.reduce((acc, photo) => acc + (photo.likes || 0), 0);
   const totalPhotos = userPhotos.length;
+  const totalFollowers = followers.length; // Conteggio dinamico
   
   const [isAuthReady, setIsAuthReady] = useState(false); 
 
-  // Caricamento Dati Iniziale
   useEffect(() => {
     async function fetchUserData() {
-      // 1. Controlla l'utente loggato
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -41,7 +47,7 @@ export default function Dashboard() {
         return;
       }
       
-      // 2. Prendi il Profilo (Username, Città, Avatar)
+      // 1. Profilo
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
@@ -51,7 +57,7 @@ export default function Dashboard() {
       if (profileData) {
         setProfile(profileData as Profile);
         
-        // 3. Prendi le FOTO caricate dall'utente
+        // 2. Foto
         const { data: photosData } = await supabase
           .from('photos')
           .select('id, url, likes')
@@ -59,6 +65,24 @@ export default function Dashboard() {
           .order('created_at', { ascending: false });
 
         setUserPhotos(photosData || []);
+
+        // 3. Followers (Chi segue ME)
+        const { data: followsData } = await supabase
+            .from('follows')
+            .select('follower_id')
+            .eq('following_id', user.id);
+        
+        if (followsData && followsData.length > 0) {
+            const followerIds = followsData.map(f => f.follower_id);
+            const { data: followersProfiles } = await supabase
+                .from('profiles')
+                .select('id, username, avatar_url')
+                .in('id', followerIds);
+            
+            setFollowers(followersProfiles as Follower[] || []);
+        } else {
+            setFollowers([]);
+        }
       }
       
       setLoading(false);
@@ -68,43 +92,24 @@ export default function Dashboard() {
     fetchUserData();
   }, [router]);
   
-  // FUNZIONE ELIMINA FOTO
   async function handleDeletePhoto(photoId: number, photoUrl: string) {
-    // Usiamo un div personalizzato anziché alert() o confirm() per compatibilità con iFrame
     if (!window.confirm('Sei sicuro di voler eliminare questo scatto? L\'azione è irreversibile.')) {
       return;
     }
-
-    // Cancelliamo l'anteprima subito per dare feedback veloce all'utente
     const originalPhotos = [...userPhotos];
     setUserPhotos(userPhotos.filter(p => p.id !== photoId));
 
     try {
-      // 1. Cancella la riga dal database
-      const { error: dbError } = await supabase
-        .from('photos')
-        .delete()
-        .eq('id', photoId);
-
+      const { error: dbError } = await supabase.from('photos').delete().eq('id', photoId);
       if (dbError) throw dbError;
-      
-      // 2. Cancella il file fisico dallo Storage
       const fileName = photoUrl.split('/').pop();
-      if (fileName) {
-         const { error: storageError } = await supabase.storage.from('uploads').remove([fileName]);
-         if (storageError) console.warn("Nota: Errore cancellazione file fisico (non bloccante):", storageError);
-      }
-
+      if (fileName) await supabase.storage.from('uploads').remove([fileName]);
       alert("Foto eliminata con successo!");
-
     } catch (error: any) {
-      // Se qualcosa va storto, rimettiamo la foto nella lista
       setUserPhotos(originalPhotos);
       alert("Errore nell'eliminazione: " + error.message);
-      console.error(error);
     }
   }
-
 
   if (loading && !isAuthReady) return <div className="min-h-screen bg-stone-600 flex items-center justify-center text-white">Caricamento Dashboard...</div>;
   
@@ -143,30 +148,24 @@ export default function Dashboard() {
           </button>
 
           <nav className="flex flex-col gap-3 overflow-y-auto custom-scrollbar flex-1">
-            {/* Link Attivo (Dashboard) */}
-            <Link href="/dashboard" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>
-              🏠 Dashboard
-            </Link>
+            <Link href="/dashboard" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>🏠 Dashboard</Link>
             
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
-            
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
             <Link href="/challenges" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🏆 Sfide del Mese</Link>
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
 
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
-
             <Link href="/upload" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📤 Carica Foto</Link>
             <Link href="/contracts" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📄 Genera Contratti</Link>
             <Link href="/private" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🔒 Area Clienti</Link>
-
-            <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Account</p>
             
+            <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Account</p>
             <Link href="/notifications" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🔔 Notifiche</Link>
             <Link href="/settings" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>⚙️ Impostazioni</Link>
           </nav>
-
+          
           <div className="mt-auto pt-6 border-t border-stone-500/30">
             <button onClick={() => supabase.auth.signOut().then(() => router.push('/'))} className="text-stone-400 hover:text-stone-100 text-sm flex items-center gap-2 px-3 py-2 hover:bg-white/5 rounded-lg transition w-full text-left">
               🚪 Esci
@@ -190,8 +189,13 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          {/* Statistiche */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          {/* STATISTICHE AGGIORNATE (Colori Caldi) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group">
+              <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Follower</h3>
+              <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalFollowers}</p>
+              <p className="text-stone-400 text-xs mt-2">Persone che ti seguono</p>
+            </div>
             <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group">
               <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Foto Caricate</h3>
               <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalPhotos}</p>
@@ -204,50 +208,61 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
-            I tuoi scatti (Gestione)
-          </h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            <Link href="/upload" className="aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex flex-col items-center justify-center text-stone-400 hover:border-amber-200 hover:text-white hover:bg-white/10 transition cursor-pointer group">
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition group-hover:bg-amber-700/50 shadow-lg"><span className="text-3xl">+</span></div>
-                <span className="font-medium tracking-wide">Carica Foto</span>
-            </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            {userPhotos.map(photo => (
-                <div key={photo.id} className="aspect-square bg-stone-800 rounded-3xl overflow-hidden relative group border border-stone-500/30 shadow-xl">
-                  
-                  <img src={photo.url} className="w-full h-full object-cover" />
-                  
-                  {/* Overlay Azioni (Caldo) */}
-                  <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300
-                                  opacity-100 xl:opacity-0 xl:group-hover:opacity-100">
-                      
-                      <Link href={`/photo/${photo.id}`}>
-                        <button className="text-white font-bold border border-white/30 bg-white/10 px-5 py-2 rounded-full hover:bg-white hover:text-stone-900 transition cursor-pointer text-sm">
-                            Visualizza
-                        </button>
-                      </Link>
-                      
-                      <button 
-                        onClick={(e) => {
-                           e.preventDefault(); 
-                           e.stopPropagation(); 
-                           handleDeletePhoto(photo.id, photo.url);
-                        }}
-                        className="text-red-400 text-sm font-bold hover:text-red-200 hover:bg-red-500/20 px-4 py-2 rounded-full transition border border-red-500/20"
-                      >
-                        🗑️ Elimina
-                      </button>
-                  </div>
+            {/* SEZIONE FOTO */}
+            <div>
+                <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">I tuoi scatti</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <Link href="/upload" className="aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex flex-col items-center justify-center text-stone-400 hover:border-amber-200 hover:text-white hover:bg-white/10 transition cursor-pointer group">
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-2 group-hover:scale-110 transition group-hover:bg-amber-700/50 shadow-lg"><span className="text-2xl">+</span></div>
+                        <span className="font-medium text-sm">Carica</span>
+                    </Link>
+                    {userPhotos.map(photo => (
+                        <div key={photo.id} className="aspect-square bg-stone-800 rounded-3xl overflow-hidden relative group border border-stone-500/30 shadow-xl">
+                        <img src={photo.url} className="w-full h-full object-cover" />
+                        
+                        {/* Overlay Azioni (Colori Caldi e Fix Mobile) */}
+                        <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300 opacity-100 xl:opacity-0 xl:group-hover:opacity-100">
+                            <Link href={`/photo/${photo.id}`}>
+                                <button className="text-white font-bold border border-white/30 bg-white/10 px-4 py-1 rounded-full hover:bg-white hover:text-stone-900 transition cursor-pointer text-xs">Apri</button>
+                            </Link>
+                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeletePhoto(photo.id, photo.url); }} className="text-red-400 text-xs font-bold hover:text-red-200 hover:bg-red-500/20 px-3 py-1 rounded-full transition border border-red-500/20">Elimina</button>
+                        </div>
+                        </div>
+                    ))}
+                    {userPhotos.length === 0 && <div className="col-span-full py-10 text-center text-stone-400 text-sm">Nessuna foto ancora.</div>}
                 </div>
-            ))}
-            
-            {userPhotos.length === 0 && (
-                <div className="col-span-2 aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex items-center justify-center p-4 text-center">
-                    <p className="text-stone-400 text-sm">Non hai ancora caricato scatti.<br/>Inizia subito a creare il tuo portfolio!</p>
+            </div>
+
+            {/* NUOVA SEZIONE: CHI TI SEGUE */}
+            <div>
+                <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">Chi ti segue ({followers.length})</h2>
+                <div className="bg-white/5 border border-stone-400/20 rounded-3xl p-6 backdrop-blur-md min-h-[200px]">
+                    {followers.length === 0 ? (
+                        <p className="text-stone-400 text-sm text-center py-10">Non hai ancora follower. Carica foto per farti notare!</p>
+                    ) : (
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            {followers.map(follower => (
+                                <Link href={`/profile/${follower.username}`} key={follower.id} className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-xl transition group">
+                                    <div className="w-10 h-10 rounded-full bg-stone-700 overflow-hidden border border-stone-500 group-hover:border-amber-400 transition">
+                                        {follower.avatar_url ? (
+                                            <img src={follower.avatar_url} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-lg">👤</div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-bold text-sm group-hover:text-amber-200 transition">{follower.username}</p>
+                                        <p className="text-stone-400 text-xs">Vedi profilo →</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
+
           </div>
         </main>
       </div>
