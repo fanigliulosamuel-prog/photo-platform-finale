@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  // Rimosso stato isAdmin perché ora l'accesso è separato
+  const [isAdmin, setIsAdmin] = useState(false); 
 
   // Dati Sicurezza
   const [newEmail, setNewEmail] = useState("");
@@ -44,6 +44,7 @@ export default function SettingsPage() {
         setBio(data.bio || "");
         setCity(data.city || "");
         setAvatarUrl(data.avatar_url || "");
+        if (data.is_admin) setIsAdmin(true); 
       }
       setLoading(false);
     }
@@ -75,7 +76,7 @@ export default function SettingsPage() {
     }
   }
 
-  // Salva Profilo (Info Pubbliche)
+  // Salva Profilo (Info Pubbliche) con Controllo Unicità
   async function updateProfile() {
     try {
       setLoading(true);
@@ -89,10 +90,16 @@ export default function SettingsPage() {
       };
 
       const { error } = await supabase.from('profiles').upsert(updates, { onConflict: 'id' });
+      
       if (error) throw error;
+      
       alert("Profilo aggiornato con successo!");
     } catch (error: any) {
-      alert("Errore nel salvataggio: " + error.message);
+      if (error.code === '23505') {
+          alert("⚠️ Questo username è già in uso. Per favore scegline un altro.");
+      } else {
+          alert("Errore nel salvataggio: " + error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -123,7 +130,6 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-y-auto p-4 md:p-8">
       
-      {/* Sfondo */}
       <div className="fixed inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
       <div className="fixed top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -132,6 +138,13 @@ export default function SettingsPage() {
         <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-white">Impostazioni Account</h1>
             <div className="flex gap-4 items-center">
+                {isAdmin && (
+                    <Link href="/admin">
+                        <button className="text-sm bg-red-600 hover:bg-red-500 px-4 py-2 rounded-full text-white font-bold transition shadow-lg flex items-center gap-2">
+                            ⚠️ Pannello Admin
+                        </button>
+                    </Link>
+                )}
                 <Link href="/dashboard" className="text-sm text-stone-200 hover:text-white transition flex items-center gap-2">← Dashboard</Link>
             </div>
         </div>
@@ -150,7 +163,16 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex-1 space-y-5">
-                    <div><label className="block text-xs font-bold text-stone-200 uppercase mb-2">Username</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none"/></div>
+                    <div>
+                        <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Username</label>
+                        <input 
+                            type="text" 
+                            value={username} 
+                            onChange={(e) => setUsername(e.target.value)} 
+                            className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none"
+                        />
+                        <p className="text-[10px] text-stone-300 mt-1">Deve essere unico.</p>
+                    </div>
                     <div><label className="block text-xs font-bold text-stone-200 uppercase mb-2">Città</label><input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none"/></div>
                     <div><label className="block text-xs font-bold text-stone-200 uppercase mb-2">Bio</label><textarea value={bio} onChange={(e) => setBio(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none h-24 resize-none"/></div>
                     <button onClick={updateProfile} className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg transition">Salva Profilo</button>

@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [city, setCity] = useState('');
   
   const [loading, setLoading] = useState(false);
-  // Gestisce le 3 viste: Accesso, Registrazione, Reset Password
   const [view, setView] = useState<'login' | 'signup' | 'reset'>('login');
 
   async function handleAuth(e: React.FormEvent) {
@@ -60,16 +59,16 @@ export default function LoginPage() {
         router.push('/dashboard'); 
 
       } else if (view === 'reset') {
-        // --- RESET PASSWORD (AGGIORNATO) ---
+        // --- RESET PASSWORD ---
+        // Qui indirizziamo l'utente alla pagina dedicata per il cambio password
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          // Reindirizza alla pagina specifica per inserire la nuova password
           redirectTo: `${window.location.origin}/update-password`,
         });
         
         if (error) throw error;
         
         alert("Ti abbiamo inviato un'email per reimpostare la password. Controlla la posta!");
-        setView('login'); // Torna al login dopo l'invio
+        setView('login'); 
       }
 
     } catch (error: any) {
@@ -87,7 +86,7 @@ export default function LoginPage() {
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde */}
+      {/* Luci Ambientali */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
@@ -128,7 +127,6 @@ export default function LoginPage() {
             </div>
           )}
           
-          {/* CAMPI EXTRA PER LA REGISTRAZIONE */}
           {view === 'signup' && (
             <div className="animate-fade-in space-y-5">
               <div>
@@ -151,7 +149,6 @@ export default function LoginPage() {
 
         </form>
 
-        {/* Toggle Viste */}
         <div className="mt-8 text-center text-stone-300 text-sm space-y-2">
           {view === 'login' && (
              <>
@@ -170,7 +167,9 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-6 text-center border-t border-stone-400/50 pt-4">
-          <Link href="/" className="text-sm text-stone-400 hover:text-white transition flex items-center justify-center gap-2">← Torna alla Home</Link>
+          <Link href="/" className="text-sm text-stone-400 hover:text-white transition flex items-center justify-center gap-2">
+            ← Torna alla Home
+          </Link>
         </div>
         
         <div className="mt-4 text-center text-xs text-stone-400 space-x-4">
