@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  // Rimosso stato isAdmin perché ora l'accesso è separato
 
   // Dati Sicurezza
   const [newEmail, setNewEmail] = useState("");
@@ -30,11 +31,11 @@ export default function SettingsPage() {
         return;
       }
       setUser(user);
-      setNewEmail(user.email || ""); // Precompila con l'email attuale
+      setNewEmail(user.email || ""); 
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*') 
         .eq('id', user.id)
         .single();
 
@@ -130,7 +131,9 @@ export default function SettingsPage() {
         
         <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-white">Impostazioni Account</h1>
-            <Link href="/dashboard" className="text-sm text-stone-200 hover:text-white transition flex items-center gap-2">← Dashboard</Link>
+            <div className="flex gap-4 items-center">
+                <Link href="/dashboard" className="text-sm text-stone-200 hover:text-white transition flex items-center gap-2">← Dashboard</Link>
+            </div>
         </div>
 
         {/* --- SEZIONE 1: PROFILO PUBBLICO --- */}
