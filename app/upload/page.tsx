@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 // LISTA CATEGORIE ESTESA (Deve corrispondere a quella di explore.page.tsx)
 const CATEGORIES = [
@@ -125,10 +126,17 @@ export default function UploadPage() {
       {/* CARD */}
       <div className="relative z-10 w-full max-w-2xl bg-stone-400/40 backdrop-blur-xl border border-stone-300/50 p-8 rounded-3xl shadow-2xl">
         
-        <h1 className="text-4xl font-bold mb-2 text-center text-white drop-shadow-md">
-          Carica il tuo Scatto
-        </h1>
-        <p className="text-stone-100 text-center mb-8 text-sm">Mostra il tuo talento alla community.</p>
+        {/* INTESTAZIONE CON TASTO INDIETRO */}
+        <div className="flex justify-between items-center mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-md">
+            Carica il tuo Scatto
+            </h1>
+            <Link href="/dashboard" className="text-sm text-stone-200 hover:text-white transition flex items-center gap-2 px-3 py-1 rounded-full hover:bg-stone-500/20">
+                ← Indietro
+            </Link>
+        </div>
+        
+        <p className="text-stone-100 mb-8 text-sm">Mostra il tuo talento alla community.</p>
 
         <form onSubmit={handleUpload} className="space-y-6">
           
@@ -136,7 +144,7 @@ export default function UploadPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-stone-200 uppercase tracking-wider mb-2">Titolo Opera</label>
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-stone-500/40 border border-stone-400/50 rounded-xl p-3 text-white focus:border-amber-400/50 outline-none" placeholder="Titolo" required/>
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-stone-500/40 border border-stone-400/50 rounded-xl p-3 text-white focus:border-amber-400/50 outline-none placeholder-stone-300" placeholder="Titolo" required/>
             </div>
             <div>
               <label className="block text-xs font-bold text-stone-200 uppercase tracking-wider mb-2">Nome Fotografo</label>
