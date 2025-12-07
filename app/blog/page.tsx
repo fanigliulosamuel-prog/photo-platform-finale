@@ -25,7 +25,8 @@ export default function BlogPage() {
   // Stati per il modulo di scrittura
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
-  const [newImageUrl, setNewImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null); // NUOVO: File invece di URL manuale
+  const [previewUrl, setPreviewUrl] = useState(""); // Per vedere l'anteprima mentre carichi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
 
@@ -54,6 +55,15 @@ export default function BlogPage() {
     setLoading(false);
   }
 
+  // Gestione selezione file
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setPreviewUrl(URL.createObjectURL(file)); // Crea anteprima locale immediata
+    }
+  };
+
   async function handleCreatePost(e: React.FormEvent) {
       e.preventDefault();
       if (!username) return alert("Devi essere loggato e avere un username per scrivere.");
@@ -61,28 +71,55 @@ export default function BlogPage() {
 
       setIsSubmitting(true);
 
-      // Crea uno slug semplice dal titolo
-      const slug = newTitle.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Date.now();
+      try {
+        let uploadedImageUrl = "";
 
-      const { error } = await supabase.from('posts').insert([{
-          title: newTitle,
-          content: newContent,
-          image_url: newImageUrl,
-          author: username,
-          slug: slug
-      }]);
+        // 1. Se c'è un file, caricalo su Supabase Storage
+        if (imageFile) {
+            const fileExt = imageFile.name.split('.').pop();
+            const fileName = `blog_${Date.now()}.${fileExt}`;
+            
+            const { error: uploadError } = await supabase.storage
+                .from('uploads')
+                .upload(fileName, imageFile);
 
-      if (!error) {
-          alert("Storia pubblicata con successo!");
-          setNewTitle("");
-          setNewContent("");
-          setNewImageUrl("");
-          fetchPosts(); // Ricarica la lista
-      } else {
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('uploads')
+                .getPublicUrl(fileName);
+            
+            uploadedImageUrl = publicUrl;
+        }
+
+        // 2. Crea lo slug
+        const slug = newTitle.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Date.now();
+
+        // 3. Salva il post nel DB
+        const { error } = await supabase.from('posts').insert([{
+            title: newTitle,
+            content: newContent,
+            image_url: uploadedImageUrl, // Usa l'URL generato (o vuoto)
+            author: username,
+            slug: slug
+        }]);
+
+        if (error) throw error;
+
+        alert("Storia pubblicata con successo!");
+        // Reset form
+        setNewTitle("");
+        setNewContent("");
+        setImageFile(null);
+        setPreviewUrl("");
+        fetchPosts(); 
+
+      } catch (error: any) {
           console.error(error);
-          alert("Errore nella pubblicazione.");
+          alert("Errore: " + error.message);
+      } finally {
+          setIsSubmitting(false);
       }
-      setIsSubmitting(false);
   }
 
   return (
@@ -110,36 +147,60 @@ export default function BlogPage() {
           Storie, tecniche e segreti dei fotografi di Photo Platform.
         </p>
 
-        {/* --- SEZIONE SCRITTURA NUOVO POST --- */}
+        {/* --- SEZIONE SCRITTURA CON UPLOAD --- */}
         {username ? (
             <div className="bg-stone-400/20 border border-stone-300/30 p-8 rounded-3xl backdrop-blur-md mb-16 shadow-2xl">
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">✍️ Scrivi una nuova storia</h3>
+                
                 <form onSubmit={handleCreatePost} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input 
-                            type="text" 
-                            placeholder="Titolo della storia..." 
-                            value={newTitle}
-                            onChange={e => setNewTitle(e.target.value)}
-                            className="w-full bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 outline-none transition"
-                        />
-                        <input 
-                            type="text" 
-                            placeholder="URL Immagine Copertina (opzionale)" 
-                            value={newImageUrl}
-                            onChange={e => setNewImageUrl(e.target.value)}
-                            className="w-full bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 outline-none transition"
-                        />
+                    <div className="flex flex-col md:flex-row gap-6">
+                        {/* Campi Input */}
+                        <div className="flex-1 space-y-4">
+                            <input 
+                                type="text" 
+                                placeholder="Titolo della storia..." 
+                                value={newTitle}
+                                onChange={e => setNewTitle(e.target.value)}
+                                className="w-full bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 outline-none transition"
+                            />
+                            
+                            {/* Input File invece di URL text */}
+                            <div className="relative group">
+                                <label className="block w-full bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-stone-300 cursor-pointer hover:bg-stone-600/70 transition border-dashed">
+                                    {imageFile ? `File selezionato: ${imageFile.name}` : "Clicca per caricare un'immagine di copertina"}
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+
+                            <textarea 
+                                placeholder="Racconta la tua esperienza..." 
+                                value={newContent}
+                                onChange={e => setNewContent(e.target.value)}
+                                className="w-full h-32 bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 outline-none transition resize-none"
+                            ></textarea>
+                        </div>
+
+                        {/* Anteprima Immagine Live */}
+                        <div className="w-full md:w-1/3 aspect-video md:aspect-auto bg-stone-800/50 rounded-2xl border-2 border-dashed border-stone-500/30 flex items-center justify-center overflow-hidden relative">
+                            {previewUrl ? (
+                                <img src={previewUrl} alt="Anteprima" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="text-center p-4">
+                                    <span className="text-4xl block mb-2">🖼️</span>
+                                    <p className="text-stone-400 text-sm">L'immagine apparirà qui</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <textarea 
-                        placeholder="Racconta la tua esperienza..." 
-                        value={newContent}
-                        onChange={e => setNewContent(e.target.value)}
-                        className="w-full h-32 bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 outline-none transition resize-none"
-                    ></textarea>
+
                     <button 
                         disabled={isSubmitting}
-                        className="px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-[1.02] disabled:opacity-50"
+                        className="w-full md:w-auto px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-[1.02] disabled:opacity-50"
                     >
                         {isSubmitting ? "Pubblicazione..." : "Pubblica Storia"}
                     </button>
