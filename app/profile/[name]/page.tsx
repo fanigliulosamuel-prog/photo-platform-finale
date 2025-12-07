@@ -21,11 +21,21 @@ type Profile = {
   avatar_url: string;
 }
 
+type Post = {
+  id: number;
+  title: string;
+  slug: string;
+  created_at: string;
+  image_url: string;
+  content: string;
+}
+
 export default function ProfilePage() {
   const params = useParams();
   const authorName = decodeURIComponent(params?.name as string);
 
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]); // Stato per i post
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -86,18 +96,26 @@ export default function ProfilePage() {
 
       if (photosData) setPhotos(photosData);
 
+      // 6. Prendi i POST DEL BLOG dell'autore (Aggiunto)
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('author', authorName)
+        .order('created_at', { ascending: false });
+
+      if (postsData) setPosts(postsData);
+
       setLoading(false);
     }
 
     fetchData();
   }, [authorName]);
 
-  // --- NUOVA GESTIONE FOLLOW (ATOMICA) ---
+  // --- GESTIONE FOLLOW ---
   async function handleFollow() {
     if (!currentUserId) return alert("Devi accedere per seguire gli utenti.");
     if (!profile) return;
 
-    // Salva stato precedente
     const prevFollowing = isFollowing;
     const prevCount = followersCount;
 
@@ -111,16 +129,12 @@ export default function ProfilePage() {
     }
 
     try {
-        // Chiama la funzione SQL 'toggle_follow'
         const { error } = await supabase.rpc('toggle_follow', { 
             target_user_id: profile.id 
         });
-
         if (error) throw error;
-
     } catch (error: any) {
         console.error("Errore Follow:", error);
-        // Rollback visuale in caso di errore
         setIsFollowing(prevFollowing);
         setFollowersCount(prevCount);
         alert("Errore Follow: " + error.message);
@@ -135,11 +149,9 @@ export default function ProfilePage() {
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde */}
       <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* Navigazione */}
       <nav className="relative z-20 p-8 flex justify-between items-center max-w-7xl mx-auto w-full">
         <Link href="/explore" className="flex items-center gap-2 text-stone-200 hover:text-white transition bg-stone-400/20 px-5 py-2 rounded-full border border-stone-400/30 backdrop-blur-md">
           ← Indietro
@@ -148,95 +160,76 @@ export default function ProfilePage() {
 
       <div className="relative z-10 max-w-7xl mx-auto p-8">
         
-        {/* --- HEADER PROFILO --- */}
+        {/* HEADER PROFILO */}
         <div className="flex flex-col md:flex-row items-start gap-10 mb-12 bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
-          
-          {/* Avatar */}
           <div className="w-28 h-28 shrink-0 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-4xl font-bold shadow-[0_0_30px_rgba(251,191,36,0.3)] border-4 border-stone-800 text-white relative overflow-hidden">
-            {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt={authorName} className="w-full h-full object-cover" />
-            ) : (
-                authorName.charAt(0).toUpperCase()
-            )}
+            {profile?.avatar_url ? <img src={profile.avatar_url} alt={authorName} className="w-full h-full object-cover" /> : authorName.charAt(0).toUpperCase()}
           </div>
-
           <div className="flex-1 w-full">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
                 <div>
                     <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-1">{authorName}</h1>
-                    <p className="text-stone-300 flex items-center gap-2">
-                        Fotografo 
-                        {profile?.city && <span className="text-amber-200/80">• {profile.city} 📍</span>}
-                    </p>
+                    <p className="text-stone-300 flex items-center gap-2">Fotografo {profile?.city && <span className="text-amber-200/80">• {profile.city} 📍</span>}</p>
                 </div>
-                
-                {/* BOTTONE FOLLOW DINAMICO */}
                 {currentUserId !== profile?.id && (
-                    <button 
-                        onClick={handleFollow}
-                        className={`mt-4 md:mt-0 px-8 py-3 font-bold rounded-2xl transition shadow-lg text-sm flex items-center gap-2
-                        ${isFollowing 
-                            ? "bg-white text-stone-900 border border-stone-300 hover:bg-stone-200" 
-                            : "bg-amber-600 text-white hover:bg-amber-500"}`}
-                    >
-                        {isFollowing ? "Seguito ✔" : "Segui +"}
-                    </button>
+                    <button onClick={handleFollow} className={`mt-4 md:mt-0 px-8 py-3 font-bold rounded-2xl transition shadow-lg text-sm flex items-center gap-2 ${isFollowing ? "bg-white text-stone-900 border border-stone-300 hover:bg-stone-200" : "bg-amber-600 text-white hover:bg-amber-500"}`}>{isFollowing ? "Seguito ✔" : "Segui +"}</button>
                 )}
             </div>
-
-            {/* BIO */}
-            {profile?.bio && (
-                <p className="text-stone-200 text-sm leading-relaxed max-w-2xl mb-6 bg-stone-900/20 p-4 rounded-xl border border-stone-500/20">
-                    "{profile.bio}"
-                </p>
-            )}
-            
+            {profile?.bio && <p className="text-stone-200 text-sm leading-relaxed max-w-2xl mb-6 bg-stone-900/20 p-4 rounded-xl border border-stone-500/20">"{profile.bio}"</p>}
             <div className="flex gap-8 border-t border-stone-500/30 pt-6">
-              <div>
-                <span className="block text-2xl font-bold text-white">{totalPhotos}</span>
-                <span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Scatti Pubblici</span>
-              </div>
-              <div>
-                <span className="block text-2xl font-bold text-white">{totalLikes}</span>
-                <span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Like Totali</span>
-              </div>
-              <div>
-                <span className="block text-2xl font-bold text-white">{followersCount}</span>
-                <span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Follower</span>
-              </div>
+              <div><span className="block text-2xl font-bold text-white">{totalPhotos}</span><span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Scatti</span></div>
+              <div><span className="block text-2xl font-bold text-white">{totalLikes}</span><span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Like</span></div>
+              <div><span className="block text-2xl font-bold text-white">{followersCount}</span><span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Follower</span></div>
             </div>
           </div>
         </div>
 
         {/* --- PORTFOLIO --- */}
         <div className="flex items-center gap-4 mb-8">
-          <h2 className="text-2xl font-bold text-white">Portfolio Pubblico</h2>
+          <h2 className="text-2xl font-bold text-white">Portfolio</h2>
           <div className="h-px bg-stone-500/30 flex-1"></div>
         </div>
 
-        {loading ? (
-          <p className="text-center text-stone-400 py-20">Caricamento portfolio...</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {loading ? <p className="text-center text-stone-400 py-10">Caricamento...</p> : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {photos.map((photo) => (
               <Link href={`/photo/${photo.id}`} key={photo.id} className="group relative aspect-square bg-stone-800 rounded-2xl overflow-hidden cursor-pointer border border-stone-500/30 hover:border-amber-400/50 transition duration-500 shadow-lg">
-                <img 
-                  src={photo.url} 
-                  className="w-full h-full object-cover transition duration-700 group-hover:scale-110" 
-                />
+                <img src={photo.url} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-stone-900/80 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center flex-col gap-2 backdrop-blur-sm">
                    <p className="font-bold text-xl translate-y-4 group-hover:translate-y-0 transition duration-300 text-white">{photo.title}</p>
                    <p className="text-sm text-amber-200 translate-y-4 group-hover:translate-y-0 transition duration-300 delay-75">❤️ {photo.likes} Mi piace</p>
                 </div>
               </Link>
             ))}
-            
-            {photos.length === 0 && (
-               <div className="col-span-full text-center py-20 bg-stone-400/10 rounded-3xl border border-dashed border-stone-400/30">
-                  <p className="text-stone-300 text-xl font-light">Nessuna foto pubblica trovata per questo utente.</p>
-               </div>
-            )}
+            {photos.length === 0 && <div className="col-span-full text-center py-10 bg-stone-400/10 rounded-3xl border border-dashed border-stone-400/30"><p className="text-stone-300 text-xl font-light">Nessuna foto pubblica trovata.</p></div>}
           </div>
+        )}
+
+        {/* --- SEZIONE BLOG & STORIE (Aggiunta) --- */}
+        {posts.length > 0 && (
+            <>
+                <div className="flex items-center gap-4 mb-8">
+                    <h2 className="text-2xl font-bold text-white">Storie & Articoli</h2>
+                    <div className="h-px bg-stone-500/30 flex-1"></div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
+                    {posts.map((post) => (
+                        <Link href={`/blog/${post.slug}`} key={post.id} className="block group bg-stone-400/20 border border-stone-400/30 rounded-2xl overflow-hidden backdrop-blur-md hover:border-amber-400/50 transition duration-300 shadow-lg">
+                            <div className="flex h-40">
+                                <div className="w-1/3 overflow-hidden relative">
+                                    <img src={post.image_url || "https://placehold.co/600x400/57534e/d6d3d1?text=Story"} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
+                                </div>
+                                <div className="w-2/3 p-4 flex flex-col justify-center">
+                                    <h3 className="text-xl font-bold text-white group-hover:text-amber-200 transition line-clamp-1">{post.title}</h3>
+                                    <p className="text-stone-300 text-sm line-clamp-2 mt-2">{post.content}</p>
+                                    <p className="text-stone-500 text-xs mt-3">{new Date(post.created_at).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </>
         )}
 
       </div>
