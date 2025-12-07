@@ -66,7 +66,7 @@ export default function Dashboard() {
 
         setUserPhotos(photosData || []);
 
-        // 3. Followers (Reinserito per far funzionare il contatore)
+        // 3. Followers (Chi segue ME)
         const { data: followsData } = await supabase
             .from('follows')
             .select('follower_id')
@@ -179,7 +179,7 @@ export default function Dashboard() {
         
         {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto scroll-smooth">
           
           <div className="flex justify-between items-center mb-10">
             <button onClick={() => setIsMenuOpen(true)} className="text-white md:hidden text-3xl mr-4">☰</button>
@@ -212,12 +212,14 @@ export default function Dashboard() {
                 </div>
             </Link>
 
-            {/* 3. Card Like -> STATICA (Nessun Link) */}
-            <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full">
-                <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Like Totali</h3>
-                <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalLikes}</p>
-                <p className="text-stone-400 text-xs mt-2">Conteggio Like sui tuoi scatti</p>
-            </div>
+            {/* 3. Card Like -> LINK A PAGINA DEDICATA (NUOVO!) */}
+            <Link href="/dashboard/likes" className="block transform transition hover:scale-[1.02]">
+                <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full cursor-pointer">
+                    <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Like Totali</h3>
+                    <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalLikes}</p>
+                    <p className="text-stone-400 text-xs mt-2">Vedi chi ti ha votato →</p>
+                </div>
+            </Link>
           </div>
 
           <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
