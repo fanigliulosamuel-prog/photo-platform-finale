@@ -17,7 +17,6 @@ type Photo = {
   likes: number;
 }
 
-// Tipo per i follower
 type Follower = {
     id: string;
     username: string;
@@ -28,13 +27,13 @@ export default function Dashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userPhotos, setUserPhotos] = useState<Photo[]>([]);
-  const [followers, setFollowers] = useState<Follower[]>([]); // Stato Follower
+  const [followers, setFollowers] = useState<Follower[]>([]); 
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const totalLikes = userPhotos.reduce((acc, photo) => acc + (photo.likes || 0), 0);
   const totalPhotos = userPhotos.length;
-  const totalFollowers = followers.length; // Numero Follower
+  const totalFollowers = followers.length; 
   
   const [isAuthReady, setIsAuthReady] = useState(false); 
 
@@ -66,7 +65,7 @@ export default function Dashboard() {
 
         setUserPhotos(photosData || []);
 
-        // 3. Followers (Chi segue ME)
+        // 3. Followers
         const { data: followsData } = await supabase
             .from('follows')
             .select('follower_id')
@@ -129,20 +128,28 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
+    // FIX SCROLL: Rimosso overflow-hidden, usiamo min-h-screen per permettere lo scroll naturale
+    <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative">
       
-      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
+      {/* Texture Sfondo FISSATA (Fixed) */}
+      <div className="fixed inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+      {/* Luci Ambientali FISSATE */}
+      <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      <div className="flex w-full relative z-10 h-screen">
+      {/* Container Principale */}
+      <div className="flex w-full relative z-10">
         
-        {/* SIDEBAR */}
-        <aside className={`fixed md:relative w-64 bg-stone-700/40 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 h-full transition-transform duration-300 z-50
-          ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        {/* --- SIDEBAR --- */}
+        {/* FIX SIDEBAR: Su mobile è fixed e nascosta. Su Desktop è STICKY (rimane ferma mentre scorri) */}
+        <aside className={`
+          fixed inset-y-0 left-0 w-64 bg-stone-700/90 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 z-50 transition-transform duration-300
+          md:sticky md:top-0 md:h-screen md:translate-x-0
+          ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
           
           <h2 className="text-2xl font-bold text-white mb-10 tracking-tight">
             Photo Platform
@@ -177,9 +184,11 @@ export default function Dashboard() {
           </div>
         </aside>
         
+        {/* Overlay Mobile */}
         {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto scroll-smooth">
+        {/* --- AREA PRINCIPALE (Scroll naturale) --- */}
+        <main className="flex-1 p-4 md:p-8 w-full">
           
           <div className="flex justify-between items-center mb-10">
             <button onClick={() => setIsMenuOpen(true)} className="text-white md:hidden text-3xl mr-4">☰</button>
@@ -193,31 +202,27 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            
-            {/* 1. Card Follower -> LINK A PAGINA DEDICATA */}
             <Link href="/dashboard/followers" className="block transform transition hover:scale-[1.02]">
                 <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full cursor-pointer">
-                    <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Follower</h3>
-                    <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalFollowers}</p>
-                    <p className="text-stone-400 text-xs mt-2">Vedi lista completa →</p>
+                <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Follower</h3>
+                <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalFollowers}</p>
+                <p className="text-stone-400 text-xs mt-2">Vedi lista completa →</p>
                 </div>
             </Link>
 
-            {/* 2. Card Foto -> LINK A PAGINA DEDICATA */}
             <Link href="/dashboard/photos" className="block transform transition hover:scale-[1.02]">
                 <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full cursor-pointer">
-                    <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Foto Caricate</h3>
-                    <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalPhotos}</p>
-                    <p className="text-stone-400 text-xs mt-2">Gestisci tutti i tuoi scatti →</p>
+                <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Foto Caricate</h3>
+                <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalPhotos}</p>
+                <p className="text-stone-400 text-xs mt-2">Gestisci tutti i tuoi scatti →</p>
                 </div>
             </Link>
 
-            {/* 3. Card Like -> LINK A PAGINA DEDICATA (NUOVO!) */}
             <Link href="/dashboard/likes" className="block transform transition hover:scale-[1.02]">
-                <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full cursor-pointer">
-                    <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Like Totali</h3>
-                    <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalLikes}</p>
-                    <p className="text-stone-400 text-xs mt-2">Vedi chi ti ha votato →</p>
+                <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full">
+                <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Like Totali</h3>
+                <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalLikes}</p>
+                <p className="text-stone-400 text-xs mt-2">Vedi chi ti ha votato →</p>
                 </div>
             </Link>
           </div>
@@ -226,7 +231,7 @@ export default function Dashboard() {
             I tuoi scatti (Anteprima)
           </h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pb-10">
             <Link href="/upload" className="aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex flex-col items-center justify-center text-stone-400 hover:border-amber-200 hover:text-white hover:bg-white/10 transition cursor-pointer group">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition group-hover:bg-amber-700/50 shadow-lg"><span className="text-3xl">+</span></div>
                 <span className="font-medium tracking-wide">Carica Foto</span>
@@ -237,7 +242,7 @@ export default function Dashboard() {
                   
                   <img src={photo.url} className="w-full h-full object-cover" />
                   
-                  {/* FIX TABLET E MOBILE */}
+                  {/* FIX TABLET E MOBILE: Sempre visibile su touch, hover su PC */}
                   <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300
                                   opacity-100 xl:opacity-0 xl:group-hover:opacity-100">
                       
