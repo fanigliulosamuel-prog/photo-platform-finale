@@ -14,7 +14,8 @@ export default function LoginPage() {
   const [city, setCity] = useState('');
   
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<'login' | 'signup' | 'reset'>('login'); // Gestisce le 3 viste
+  // Gestisce le 3 viste: Accesso, Registrazione, Reset Password
+  const [view, setView] = useState<'login' | 'signup' | 'reset'>('login');
 
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault();
@@ -59,13 +60,16 @@ export default function LoginPage() {
         router.push('/dashboard'); 
 
       } else if (view === 'reset') {
-        // --- RESET PASSWORD ---
+        // --- RESET PASSWORD (AGGIORNATO) ---
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/settings`, // Dopo il click nella mail, porta alle impostazioni per cambiare pass
+          // Reindirizza alla pagina specifica per inserire la nuova password
+          redirectTo: `${window.location.origin}/update-password`,
         });
+        
         if (error) throw error;
+        
         alert("Ti abbiamo inviato un'email per reimpostare la password. Controlla la posta!");
-        setView('login');
+        setView('login'); // Torna al login dopo l'invio
       }
 
     } catch (error: any) {
@@ -78,7 +82,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white flex items-center justify-center p-4 relative overflow-hidden">
       
-      {/* Texture Grana */}
+      {/* Texture Sfondo */}
       <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
@@ -87,7 +91,6 @@ export default function LoginPage() {
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
-      {/* CARD CENTRALE */}
       <div className="relative z-10 w-full max-w-md bg-stone-400/40 backdrop-blur-xl border border-stone-300/50 p-8 rounded-3xl shadow-2xl">
         
         <h2 className="text-4xl font-bold text-white mb-2 text-center tracking-tight">
@@ -97,7 +100,6 @@ export default function LoginPage() {
           {view === 'signup' ? "Crea il tuo portfolio e accedi subito." : view === 'reset' ? "Inserisci la tua email per ricevere le istruzioni." : "Accedi per gestire i tuoi scatti."}
         </p>
 
-        {/* Form */}
         <form onSubmit={handleAuth} className="space-y-5">
           
           <div>
@@ -153,32 +155,22 @@ export default function LoginPage() {
         <div className="mt-8 text-center text-stone-300 text-sm space-y-2">
           {view === 'login' && (
              <>
-                <p>
-                    Non hai un account? <button onClick={() => setView('signup')} className="text-white font-bold hover:text-amber-100 hover:underline">Registrati qui</button>
-                </p>
-                <p>
-                    <button onClick={() => setView('reset')} className="text-stone-200 hover:text-white text-xs underline">Password dimenticata?</button>
-                </p>
+                <p>Non hai un account? <button onClick={() => setView('signup')} className="text-white font-bold hover:text-amber-100 hover:underline">Registrati qui</button></p>
+                <p><button onClick={() => setView('reset')} className="text-stone-200 hover:text-white text-xs underline">Password dimenticata?</button></p>
              </>
           )}
 
           {view === 'signup' && (
-             <p>
-                Hai già un account? <button onClick={() => setView('login')} className="text-white font-bold hover:text-amber-100 hover:underline">Accedi qui</button>
-             </p>
+             <p>Hai già un account? <button onClick={() => setView('login')} className="text-white font-bold hover:text-amber-100 hover:underline">Accedi qui</button></p>
           )}
 
           {view === 'reset' && (
-             <p>
-                Ti sei ricordato? <button onClick={() => setView('login')} className="text-white font-bold hover:text-amber-100 hover:underline">Torna al Login</button>
-             </p>
+             <p>Ti sei ricordato? <button onClick={() => setView('login')} className="text-white font-bold hover:text-amber-100 hover:underline">Torna al Login</button></p>
           )}
         </div>
 
         <div className="mt-6 text-center border-t border-stone-400/50 pt-4">
-          <Link href="/" className="text-sm text-stone-400 hover:text-white transition flex items-center justify-center gap-2">
-            ← Torna alla Home
-          </Link>
+          <Link href="/" className="text-sm text-stone-400 hover:text-white transition flex items-center justify-center gap-2">← Torna alla Home</Link>
         </div>
         
         <div className="mt-4 text-center text-xs text-stone-400 space-x-4">
