@@ -17,7 +17,7 @@ type Photo = {
   likes: number;
 }
 
-// Nuovo tipo per i follower
+// Tipo per i follower
 type Follower = {
     id: string;
     username: string;
@@ -28,13 +28,13 @@ export default function Dashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userPhotos, setUserPhotos] = useState<Photo[]>([]);
-  const [followers, setFollowers] = useState<Follower[]>([]); // Stato per la lista follower
+  const [followers, setFollowers] = useState<Follower[]>([]); // Stato Follower
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const totalLikes = userPhotos.reduce((acc, photo) => acc + (photo.likes || 0), 0);
   const totalPhotos = userPhotos.length;
-  const totalFollowers = followers.length; // Conteggio dinamico
+  const totalFollowers = followers.length; // Numero Follower
   
   const [isAuthReady, setIsAuthReady] = useState(false); 
 
@@ -66,7 +66,7 @@ export default function Dashboard() {
 
         setUserPhotos(photosData || []);
 
-        // 3. Followers (Chi segue ME)
+        // 3. Followers (Reinserito per far funzionare il contatore)
         const { data: followsData } = await supabase
             .from('follows')
             .select('follower_id')
@@ -96,18 +96,26 @@ export default function Dashboard() {
     if (!window.confirm('Sei sicuro di voler eliminare questo scatto? L\'azione è irreversibile.')) {
       return;
     }
+
     const originalPhotos = [...userPhotos];
     setUserPhotos(userPhotos.filter(p => p.id !== photoId));
 
     try {
       const { error: dbError } = await supabase.from('photos').delete().eq('id', photoId);
       if (dbError) throw dbError;
+      
       const fileName = photoUrl.split('/').pop();
-      if (fileName) await supabase.storage.from('uploads').remove([fileName]);
+      if (fileName) {
+         const { error: storageError } = await supabase.storage.from('uploads').remove([fileName]);
+         if (storageError) console.warn("Nota: Errore cancellazione file fisico (non bloccante):", storageError);
+      }
+
       alert("Foto eliminata con successo!");
+
     } catch (error: any) {
       setUserPhotos(originalPhotos);
       alert("Errore nell'eliminazione: " + error.message);
+      console.error(error);
     }
   }
 
@@ -121,21 +129,18 @@ export default function Dashboard() {
   );
 
   return (
-    // SFONDO CALDO (Stone 500/600)
     <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
       
-      {/* Texture Grana */}
       <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="flex w-full relative z-10 h-screen">
         
-        {/* --- SIDEBAR (Stile Caldo) --- */}
+        {/* SIDEBAR */}
         <aside className={`fixed md:relative w-64 bg-stone-700/40 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 h-full transition-transform duration-300 z-50
           ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
           
@@ -164,7 +169,7 @@ export default function Dashboard() {
             <Link href="/notifications" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🔔 Notifiche</Link>
             <Link href="/settings" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>⚙️ Impostazioni</Link>
           </nav>
-          
+
           <div className="mt-auto pt-6 border-t border-stone-500/30">
             <button onClick={() => supabase.auth.signOut().then(() => router.push('/'))} className="text-stone-400 hover:text-stone-100 text-sm flex items-center gap-2 px-3 py-2 hover:bg-white/5 rounded-lg transition w-full text-left">
               🚪 Esci
@@ -174,8 +179,7 @@ export default function Dashboard() {
         
         {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
-        {/* --- AREA PRINCIPALE (con scroll-smooth per l'effetto clic) --- */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto scroll-smooth">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           
           <div className="flex justify-between items-center mb-10">
             <button onClick={() => setIsMenuOpen(true)} className="text-white md:hidden text-3xl mr-4">☰</button>
@@ -188,91 +192,78 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          {/* STATISTICHE AGGIORNATE (Cliccabili) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             
-            {/* 1. Card Follower -> Scorre alla lista follower */}
-            <Link href="#followers" className="block transform transition hover:scale-[1.02]">
+            {/* 1. Card Follower -> LINK A PAGINA DEDICATA */}
+            <Link href="/dashboard/followers" className="block transform transition hover:scale-[1.02]">
                 <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full cursor-pointer">
-                <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Follower</h3>
-                <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalFollowers}</p>
-                <p className="text-stone-400 text-xs mt-2">Vedi chi ti segue ↓</p>
+                    <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Follower</h3>
+                    <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalFollowers}</p>
+                    <p className="text-stone-400 text-xs mt-2">Vedi lista completa →</p>
                 </div>
             </Link>
 
-            {/* 2. Card Foto -> Scorre alle foto */}
-            <Link href="#my-photos" className="block transform transition hover:scale-[1.02]">
+            {/* 2. Card Foto -> LINK A PAGINA DEDICATA */}
+            <Link href="/dashboard/photos" className="block transform transition hover:scale-[1.02]">
                 <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full cursor-pointer">
-                <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Foto Caricate</h3>
-                <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalPhotos}</p>
-                <p className="text-stone-400 text-xs mt-2">Gestisci i tuoi scatti ↓</p>
+                    <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Foto Caricate</h3>
+                    <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalPhotos}</p>
+                    <p className="text-stone-400 text-xs mt-2">Gestisci tutti i tuoi scatti →</p>
                 </div>
             </Link>
 
-            {/* 3. Card Like -> Va alle Notifiche (dove vedi CHI ha messo like) */}
-            <Link href="/notifications" className="block transform transition hover:scale-[1.02]">
-                <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full cursor-pointer">
+            {/* 3. Card Like -> STATICA (Nessun Link) */}
+            <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-stone-400/20 hover:border-amber-400/40 transition hover:bg-white/10 group h-full">
                 <h3 className="text-stone-300 text-sm mb-2 uppercase tracking-wider font-bold">Like Totali</h3>
                 <p className="text-4xl font-bold text-white group-hover:text-amber-200 transition">{totalLikes}</p>
-                <p className="text-stone-400 text-xs mt-2">Vedi chi ti ha votato →</p>
-                </div>
-            </Link>
+                <p className="text-stone-400 text-xs mt-2">Conteggio Like sui tuoi scatti</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+            I tuoi scatti (Anteprima)
+          </h2>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <Link href="/upload" className="aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex flex-col items-center justify-center text-stone-400 hover:border-amber-200 hover:text-white hover:bg-white/10 transition cursor-pointer group">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition group-hover:bg-amber-700/50 shadow-lg"><span className="text-3xl">+</span></div>
+                <span className="font-medium tracking-wide">Carica Foto</span>
+            </Link>
             
-            {/* SEZIONE FOTO (ID per lo scroll) */}
-            <div id="my-photos" className="scroll-mt-10">
-                <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">I tuoi scatti</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <Link href="/upload" className="aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex flex-col items-center justify-center text-stone-400 hover:border-amber-200 hover:text-white hover:bg-white/10 transition cursor-pointer group">
-                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-2 group-hover:scale-110 transition group-hover:bg-amber-700/50 shadow-lg"><span className="text-2xl">+</span></div>
-                        <span className="font-medium text-sm">Carica</span>
-                    </Link>
-                    {userPhotos.map(photo => (
-                        <div key={photo.id} className="aspect-square bg-stone-800 rounded-3xl overflow-hidden relative group border border-stone-500/30 shadow-xl">
-                        <img src={photo.url} className="w-full h-full object-cover" />
-                        
-                        <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300 opacity-100 xl:opacity-0 xl:group-hover:opacity-100">
-                            <Link href={`/photo/${photo.id}`}>
-                                <button className="text-white font-bold border border-white/30 bg-white/10 px-4 py-1 rounded-full hover:bg-white hover:text-stone-900 transition cursor-pointer text-xs">Apri</button>
-                            </Link>
-                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeletePhoto(photo.id, photo.url); }} className="text-red-400 text-xs font-bold hover:text-red-200 hover:bg-red-500/20 px-3 py-1 rounded-full transition border border-red-500/20">Elimina</button>
-                        </div>
-                        </div>
-                    ))}
-                    {userPhotos.length === 0 && <div className="col-span-full py-10 text-center text-stone-400 text-sm">Nessuna foto ancora.</div>}
+            {userPhotos.map(photo => (
+                <div key={photo.id} className="aspect-square bg-stone-800 rounded-3xl overflow-hidden relative group border border-stone-500/30 shadow-xl">
+                  
+                  <img src={photo.url} className="w-full h-full object-cover" />
+                  
+                  {/* FIX TABLET E MOBILE */}
+                  <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300
+                                  opacity-100 xl:opacity-0 xl:group-hover:opacity-100">
+                      
+                      <Link href={`/photo/${photo.id}`}>
+                        <button className="text-white font-bold border border-white/30 bg-white/10 px-5 py-2 rounded-full hover:bg-white hover:text-stone-900 transition cursor-pointer text-sm">
+                            Visualizza
+                        </button>
+                      </Link>
+                      
+                      <button 
+                        onClick={(e) => {
+                           e.preventDefault(); 
+                           e.stopPropagation(); 
+                           handleDeletePhoto(photo.id, photo.url);
+                        }}
+                        className="text-red-400 text-sm font-bold hover:text-red-200 hover:bg-red-500/20 px-4 py-2 rounded-full transition border border-red-500/20"
+                      >
+                        🗑️ Elimina
+                      </button>
+                  </div>
                 </div>
-            </div>
-
-            {/* SEZIONE FOLLOWER (ID per lo scroll) */}
-            <div id="followers" className="scroll-mt-10">
-                <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">Chi ti segue ({followers.length})</h2>
-                <div className="bg-white/5 border border-stone-400/20 rounded-3xl p-6 backdrop-blur-md min-h-[200px]">
-                    {followers.length === 0 ? (
-                        <p className="text-stone-400 text-sm text-center py-10">Non hai ancora follower. Carica foto per farti notare!</p>
-                    ) : (
-                        <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-                            {followers.map(follower => (
-                                <Link href={`/profile/${follower.username}`} key={follower.id} className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-xl transition group">
-                                    <div className="w-10 h-10 rounded-full bg-stone-700 overflow-hidden border border-stone-500 group-hover:border-amber-400 transition">
-                                        {follower.avatar_url ? (
-                                            <img src={follower.avatar_url} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-lg">👤</div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-white font-bold text-sm group-hover:text-amber-200 transition">{follower.username}</p>
-                                        <p className="text-stone-400 text-xs">Vedi profilo →</p>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+            ))}
+            
+            {userPhotos.length === 0 && (
+                <div className="col-span-2 aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex items-center justify-center p-4 text-center">
+                    <p className="text-stone-400 text-sm">Non hai ancora caricato scatti.<br/>Inizia subito a creare il tuo portfolio!</p>
                 </div>
-            </div>
-
+            )}
           </div>
         </main>
       </div>
