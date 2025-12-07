@@ -81,7 +81,7 @@ export default function ProfilePage() {
         .from('photos')
         .select('*')
         .eq('author_name', authorName)
-        .is('project_id', null) // Filtro privacy importante
+        .is('project_id', null) 
         .order('created_at', { ascending: false });
 
       if (photosData) setPhotos(photosData);
@@ -97,28 +97,43 @@ export default function ProfilePage() {
     if (!currentUserId) return alert("Devi accedere per seguire gli utenti.");
     if (!profile) return;
 
+    // Salviamo stato precedente per rollback in caso di errore
+    const prevFollowing = isFollowing;
+    const prevCount = followersCount;
+
+    // UI Ottimistica (Aggiorna subito)
     if (isFollowing) {
-        // UNFOLLOW (Smetti di seguire)
-        const { error } = await supabase
-            .from('follows')
-            .delete()
-            .eq('follower_id', currentUserId)
-            .eq('following_id', profile.id);
-        
-        if (!error) {
-            setIsFollowing(false);
-            setFollowersCount(prev => Math.max(0, prev - 1));
-        }
+        setIsFollowing(false);
+        setFollowersCount(prev => Math.max(0, prev - 1));
     } else {
-        // FOLLOW (Inizia a seguire)
-        const { error } = await supabase
-            .from('follows')
-            .insert([{ follower_id: currentUserId, following_id: profile.id }]);
-        
-        if (!error) {
-            setIsFollowing(true);
-            setFollowersCount(prev => prev + 1);
+        setIsFollowing(true);
+        setFollowersCount(prev => prev + 1);
+    }
+
+    try {
+        if (prevFollowing) {
+            // UNFOLLOW (Smetti di seguire)
+            const { error } = await supabase
+                .from('follows')
+                .delete()
+                .eq('follower_id', currentUserId)
+                .eq('following_id', profile.id);
+            
+            if (error) throw error;
+        } else {
+            // FOLLOW (Inizia a seguire)
+            const { error } = await supabase
+                .from('follows')
+                .insert([{ follower_id: currentUserId, following_id: profile.id }]);
+            
+            if (error) throw error;
         }
+    } catch (error: any) {
+        console.error("Errore Follow:", error);
+        // Rollback visuale
+        setIsFollowing(prevFollowing);
+        setFollowersCount(prevCount);
+        alert("Errore Follow: " + error.message);
     }
   }
 
