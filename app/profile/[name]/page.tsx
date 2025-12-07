@@ -14,7 +14,7 @@ type Photo = {
 }
 
 type Profile = {
-  id: string; // ID necessario per il follow
+  id: string; 
   username: string;
   bio: string;
   city: string;
@@ -55,7 +55,7 @@ export default function ProfilePage() {
       if (profileData) {
         setProfile(profileData);
 
-        // 3. Controllo se lo seguo già (se sono loggato)
+        // 3. Controllo se lo seguo già
         if (user) {
             const { data: followData } = await supabase
                 .from('follows')
@@ -92,45 +92,35 @@ export default function ProfilePage() {
     fetchData();
   }, [authorName]);
 
-  // --- GESTIONE FOLLOW ---
+  // --- NUOVA GESTIONE FOLLOW (ATOMICA) ---
   async function handleFollow() {
     if (!currentUserId) return alert("Devi accedere per seguire gli utenti.");
     if (!profile) return;
 
-    // Salviamo stato precedente per rollback in caso di errore
+    // Salva stato precedente
     const prevFollowing = isFollowing;
     const prevCount = followersCount;
 
-    // UI Ottimistica (Aggiorna subito)
+    // UI Ottimistica
     if (isFollowing) {
         setIsFollowing(false);
-        setFollowersCount(prev => Math.max(0, prev - 1));
+        setFollowersCount(Math.max(0, followersCount - 1));
     } else {
         setIsFollowing(true);
-        setFollowersCount(prev => prev + 1);
+        setFollowersCount(followersCount + 1);
     }
 
     try {
-        if (prevFollowing) {
-            // UNFOLLOW (Smetti di seguire)
-            const { error } = await supabase
-                .from('follows')
-                .delete()
-                .eq('follower_id', currentUserId)
-                .eq('following_id', profile.id);
-            
-            if (error) throw error;
-        } else {
-            // FOLLOW (Inizia a seguire)
-            const { error } = await supabase
-                .from('follows')
-                .insert([{ follower_id: currentUserId, following_id: profile.id }]);
-            
-            if (error) throw error;
-        }
+        // Chiama la funzione SQL 'toggle_follow'
+        const { error } = await supabase.rpc('toggle_follow', { 
+            target_user_id: profile.id 
+        });
+
+        if (error) throw error;
+
     } catch (error: any) {
         console.error("Errore Follow:", error);
-        // Rollback visuale
+        // Rollback visuale in caso di errore
         setIsFollowing(prevFollowing);
         setFollowersCount(prevCount);
         alert("Errore Follow: " + error.message);
@@ -201,7 +191,6 @@ export default function ProfilePage() {
                 </p>
             )}
             
-            {/* Statistiche */}
             <div className="flex gap-8 border-t border-stone-500/30 pt-6">
               <div>
                 <span className="block text-2xl font-bold text-white">{totalPhotos}</span>
@@ -211,14 +200,12 @@ export default function ProfilePage() {
                 <span className="block text-2xl font-bold text-white">{totalLikes}</span>
                 <span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Like Totali</span>
               </div>
-              {/* Contatore Follower */}
               <div>
                 <span className="block text-2xl font-bold text-white">{followersCount}</span>
                 <span className="text-xs text-stone-400 uppercase tracking-wider font-bold">Follower</span>
               </div>
             </div>
           </div>
-
         </div>
 
         {/* --- PORTFOLIO --- */}
