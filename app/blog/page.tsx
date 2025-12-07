@@ -25,8 +25,8 @@ export default function BlogPage() {
   // Stati per il modulo di scrittura
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null); // NUOVO: File invece di URL manuale
-  const [previewUrl, setPreviewUrl] = useState(""); // Per vedere l'anteprima mentre carichi
+  const [imageFile, setImageFile] = useState<File | null>(null); 
+  const [previewUrl, setPreviewUrl] = useState(""); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
 
@@ -55,12 +55,11 @@ export default function BlogPage() {
     setLoading(false);
   }
 
-  // Gestione selezione file
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Crea anteprima locale immediata
+      setPreviewUrl(URL.createObjectURL(file)); 
     }
   };
 
@@ -74,32 +73,21 @@ export default function BlogPage() {
       try {
         let uploadedImageUrl = "";
 
-        // 1. Se c'è un file, caricalo su Supabase Storage
         if (imageFile) {
             const fileExt = imageFile.name.split('.').pop();
             const fileName = `blog_${Date.now()}.${fileExt}`;
-            
-            const { error: uploadError } = await supabase.storage
-                .from('uploads')
-                .upload(fileName, imageFile);
-
+            const { error: uploadError } = await supabase.storage.from('uploads').upload(fileName, imageFile);
             if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('uploads')
-                .getPublicUrl(fileName);
-            
+            const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(fileName);
             uploadedImageUrl = publicUrl;
         }
 
-        // 2. Crea lo slug
         const slug = newTitle.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Date.now();
 
-        // 3. Salva il post nel DB
         const { error } = await supabase.from('posts').insert([{
             title: newTitle,
             content: newContent,
-            image_url: uploadedImageUrl, // Usa l'URL generato (o vuoto)
+            image_url: uploadedImageUrl,
             author: username,
             slug: slug
         }]);
@@ -107,7 +95,6 @@ export default function BlogPage() {
         if (error) throw error;
 
         alert("Storia pubblicata con successo!");
-        // Reset form
         setNewTitle("");
         setNewContent("");
         setImageFile(null);
@@ -122,39 +109,49 @@ export default function BlogPage() {
       }
   }
 
+  // --- NUOVA FUNZIONE ELIMINA POST ---
+  async function handleDeletePost(postId: number) {
+    if (!confirm("Sei sicuro di voler eliminare questa storia?")) return;
+
+    try {
+        const { error } = await supabase.from('posts').delete().eq('id', postId);
+        if (error) throw error;
+        
+        // Aggiorna la lista rimuovendo il post eliminato
+        setPosts(posts.filter(p => p.id !== postId));
+        alert("Storia eliminata.");
+    } catch (error: any) {
+        alert("Errore nell'eliminazione: " + error.message);
+    }
+  }
+
   return (
-    // SFONDO CALDO (Stone 500/600)
-    <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden p-8">
+    <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden p-4 md:p-8">
       
       {/* Texture Grana */}
-      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
-           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
-      </div>
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
 
       {/* Luci Ambientali Calde */}
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
       <div className="relative z-10 max-w-5xl mx-auto">
-        <Link href="/dashboard" className="text-stone-200 hover:text-white mb-8 block transition flex items-center gap-2">
-            ← Torna alla Dashboard
-        </Link>
+        <Link href="/dashboard" className="text-stone-200 hover:text-white mb-8 block transition flex items-center gap-2">← Torna alla Dashboard</Link>
         
-        <h1 className={`${playfair.className} text-6xl font-bold text-white mb-4 drop-shadow-xl text-center`}>
+        <h1 className={`${playfair.className} text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-xl text-center`}>
           Dietro le Quinte
         </h1>
         <p className="text-stone-200 text-center mb-12 text-lg">
           Storie, tecniche e segreti dei fotografi di Photo Platform.
         </p>
 
-        {/* --- SEZIONE SCRITTURA CON UPLOAD --- */}
+        {/* --- SEZIONE SCRITTURA --- */}
         {username ? (
-            <div className="bg-stone-400/20 border border-stone-300/30 p-8 rounded-3xl backdrop-blur-md mb-16 shadow-2xl">
+            <div className="bg-stone-400/20 border border-stone-300/30 p-6 md:p-8 rounded-3xl backdrop-blur-md mb-16 shadow-2xl">
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">✍️ Scrivi una nuova storia</h3>
                 
                 <form onSubmit={handleCreatePost} className="space-y-4">
                     <div className="flex flex-col md:flex-row gap-6">
-                        {/* Campi Input */}
                         <div className="flex-1 space-y-4">
                             <input 
                                 type="text" 
@@ -164,16 +161,10 @@ export default function BlogPage() {
                                 className="w-full bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-white placeholder-stone-300 focus:border-amber-400/50 outline-none transition"
                             />
                             
-                            {/* Input File invece di URL text */}
                             <div className="relative group">
-                                <label className="block w-full bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-stone-300 cursor-pointer hover:bg-stone-600/70 transition border-dashed">
-                                    {imageFile ? `File selezionato: ${imageFile.name}` : "Clicca per caricare un'immagine di copertina"}
-                                    <input 
-                                        type="file" 
-                                        accept="image/*"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                    />
+                                <label className="block w-full bg-stone-600/50 border border-stone-400/50 rounded-xl p-4 text-stone-300 cursor-pointer hover:bg-stone-600/70 transition border-dashed text-center">
+                                    {imageFile ? `📁 ${imageFile.name}` : "Clicca per caricare copertina"}
+                                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                                 </label>
                             </div>
 
@@ -185,14 +176,13 @@ export default function BlogPage() {
                             ></textarea>
                         </div>
 
-                        {/* Anteprima Immagine Live */}
-                        <div className="w-full md:w-1/3 aspect-video md:aspect-auto bg-stone-800/50 rounded-2xl border-2 border-dashed border-stone-500/30 flex items-center justify-center overflow-hidden relative">
+                        <div className="w-full md:w-1/3 aspect-video md:aspect-auto bg-stone-800/50 rounded-2xl border-2 border-dashed border-stone-500/30 flex items-center justify-center overflow-hidden relative min-h-[200px]">
                             {previewUrl ? (
                                 <img src={previewUrl} alt="Anteprima" className="w-full h-full object-cover" />
                             ) : (
                                 <div className="text-center p-4">
                                     <span className="text-4xl block mb-2">🖼️</span>
-                                    <p className="text-stone-400 text-sm">L'immagine apparirà qui</p>
+                                    <p className="text-stone-400 text-sm">Anteprima qui</p>
                                 </div>
                             )}
                         </div>
@@ -217,11 +207,12 @@ export default function BlogPage() {
         {loading ? (
           <p className="text-center text-stone-400 py-10">Caricamento articoli...</p>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-8 md:space-y-10">
             {posts.map((post) => (
-              <Link href={`/blog/${post.slug}`} key={post.id} className="block group bg-stone-400/20 border border-stone-400/30 rounded-2xl overflow-hidden backdrop-blur-md hover:border-amber-400/50 transition duration-300 shadow-xl">
-                <div className="flex flex-col md:flex-row">
-                  
+              // Il blocco principale è un div relativo per posizionare il pulsante elimina
+              <div key={post.id} className="relative group block bg-stone-400/20 border border-stone-400/30 rounded-2xl overflow-hidden backdrop-blur-md shadow-xl hover:border-amber-400/50 transition duration-300">
+                
+                <Link href={`/blog/${post.slug}`} className="flex flex-col md:flex-row">
                   {/* Immagine */}
                   <div className="md:w-1/3 h-64 overflow-hidden relative">
                     <img 
@@ -233,18 +224,34 @@ export default function BlogPage() {
                   </div>
                   
                   {/* Testo */}
-                  <div className="md:w-2/3 p-8 flex flex-col justify-center">
-                    <p className="text-xs text-amber-200 font-bold uppercase tracking-wider mb-3">Articolo</p>
-                    <h2 className="text-3xl font-bold text-white group-hover:text-amber-100 transition mb-4">{post.title}</h2>
-                    <p className="text-stone-300 line-clamp-2 mb-4">{post.content}</p>
+                  <div className="md:w-2/3 p-6 md:p-8 flex flex-col justify-center">
+                    <p className="text-xs text-amber-200 font-bold uppercase tracking-wider mb-2">Articolo</p>
+                    <h2 className="text-2xl md:text-3xl font-bold text-white group-hover:text-amber-100 transition mb-3">{post.title}</h2>
+                    <p className="text-stone-300 line-clamp-2 mb-4 text-sm md:text-base">{post.content}</p>
                     <div className="flex items-center gap-2 text-xs text-stone-400 mt-auto pt-4 border-t border-stone-500/30">
                         <span>Scritto da <strong className="text-stone-200">{post.author}</strong></span>
                         <span>•</span>
                         <span>{new Date(post.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+
+                {/* TASTO ELIMINA (Visibile solo all'autore) */}
+                {/* Usiamo z-20 per stare sopra il link e stopPropagation per non aprire l'articolo */}
+                {username === post.author && (
+                    <button 
+                        onClick={(e) => {
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            handleDeletePost(post.id);
+                        }}
+                        className="absolute top-4 right-4 z-20 bg-red-500/80 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
+                        title="Elimina la tua storia"
+                    >
+                        🗑️
+                    </button>
+                )}
+              </div>
             ))}
             
             {posts.length === 0 && (
@@ -254,7 +261,6 @@ export default function BlogPage() {
             )}
           </div>
         )}
-
       </div>
     </main>
   );
