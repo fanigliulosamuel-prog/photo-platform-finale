@@ -76,9 +76,17 @@ export default function BlogPage() {
         if (imageFile) {
             const fileExt = imageFile.name.split('.').pop();
             const fileName = `blog_${Date.now()}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage.from('uploads').upload(fileName, imageFile);
+            
+            const { error: uploadError } = await supabase.storage
+                .from('uploads')
+                .upload(fileName, imageFile);
+
             if (uploadError) throw uploadError;
-            const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(fileName);
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('uploads')
+                .getPublicUrl(fileName);
+            
             uploadedImageUrl = publicUrl;
         }
 
@@ -109,7 +117,7 @@ export default function BlogPage() {
       }
   }
 
-  // --- NUOVA FUNZIONE ELIMINA POST ---
+  // --- FUNZIONE ELIMINA POST ---
   async function handleDeletePost(postId: number) {
     if (!confirm("Sei sicuro di voler eliminare questa storia?")) return;
 
@@ -126,17 +134,22 @@ export default function BlogPage() {
   }
 
   return (
+    // SFONDO CALDO (Stone 500/600)
     <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden p-4 md:p-8">
       
       {/* Texture Grana */}
-      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+      </div>
 
       {/* Luci Ambientali Calde */}
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
       <div className="relative z-10 max-w-5xl mx-auto">
-        <Link href="/dashboard" className="text-stone-200 hover:text-white mb-8 block transition flex items-center gap-2">← Torna alla Dashboard</Link>
+        <Link href="/dashboard" className="text-stone-200 hover:text-white mb-8 block transition flex items-center gap-2">
+            ← Torna alla Dashboard
+        </Link>
         
         <h1 className={`${playfair.className} text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-xl text-center`}>
           Dietro le Quinte
@@ -236,8 +249,7 @@ export default function BlogPage() {
                   </div>
                 </Link>
 
-                {/* TASTO ELIMINA (Visibile solo all'autore) */}
-                {/* Usiamo z-20 per stare sopra il link e stopPropagation per non aprire l'articolo */}
+                {/* TASTO ELIMINA (Visibile solo all'autore, ottimizzato per mobile) */}
                 {username === post.author && (
                     <button 
                         onClick={(e) => {
@@ -245,7 +257,7 @@ export default function BlogPage() {
                             e.stopPropagation(); 
                             handleDeletePost(post.id);
                         }}
-                        className="absolute top-4 right-4 z-20 bg-red-500/80 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition transform hover:scale-110"
+                        className="absolute top-4 right-4 z-20 bg-red-600 text-white p-3 rounded-full shadow-lg transition transform active:scale-90"
                         title="Elimina la tua storia"
                     >
                         🗑️

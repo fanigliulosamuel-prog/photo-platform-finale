@@ -80,11 +80,39 @@ export default function ChallengesPage() {
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* Navigazione */}
-      <nav className="relative z-20 p-8">
-        <Link href="/dashboard" className="text-stone-200 hover:text-white transition flex items-center gap-2">
-            ← Torna alla Dashboard
+      {/* --- MENU DI NAVIGAZIONE COMPLETO --- */}
+      <nav className="relative z-20 p-6 flex flex-wrap justify-between items-center max-w-7xl mx-auto w-full border-b border-stone-400/30 gap-4">
+        <Link href="/" className={`${playfair.className} text-2xl font-bold text-white tracking-tight hover:text-amber-200 transition`}>
+           Photo Platform
         </Link>
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+            <Link href="/dashboard">
+                <button className="px-4 py-2 hover:bg-stone-400/10 text-stone-200 hover:text-white rounded-full text-xs sm:text-sm font-bold transition whitespace-nowrap">
+                  🏠 Dashboard
+                </button>
+            </Link>
+            <Link href="/explore">
+                <button className="px-4 py-2 hover:bg-stone-400/10 text-stone-200 hover:text-white rounded-full text-xs sm:text-sm font-bold transition whitespace-nowrap">
+                  📷 Gallery
+                </button>
+            </Link>
+            <Link href="/community">
+                <button className="px-4 py-2 hover:bg-stone-400/10 text-stone-200 hover:text-white rounded-full text-xs sm:text-sm font-bold transition whitespace-nowrap">
+                  🌍 Community
+                </button>
+            </Link>
+            <Link href="/challenges">
+                {/* Tasto Attivo */}
+                <button className="px-4 py-2 bg-stone-400/20 border border-stone-300/20 rounded-full text-xs sm:text-sm font-bold text-white transition whitespace-nowrap">
+                  🏆 Sfide
+                </button>
+            </Link>
+            <Link href="/blog">
+                <button className="px-4 py-2 hover:bg-stone-400/10 text-stone-200 hover:text-white rounded-full text-xs sm:text-sm font-bold transition whitespace-nowrap">
+                  📘 Blog
+                </button>
+            </Link>
+        </div>
       </nav>
 
       {/* Hero Section */}

@@ -16,7 +16,6 @@ type Photo = {
   likes: number;
 }
 
-// LISTA CATEGORIE
 const CATEGORIES = [
   "Tutti",
   "Ritratti",
@@ -78,34 +77,44 @@ export default function ExplorePage() {
   }, [category, search]);
 
   return (
-    // MODIFICA QUI: Sfondo Caldo (Stone 500/600)
     <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
       
       {/* --- SFONDO TEXTURE & LUCI --- */}
-      
-      {/* Texture Grana */}
       <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
-
-      {/* Luci Ambientali Calde (Ambra/Arancio) */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
 
-      {/* --- MENU DI NAVIGAZIONE --- */}
-      <nav className="relative z-20 p-6 flex justify-between items-center max-w-7xl mx-auto w-full border-b border-stone-400/30">
+      {/* --- MENU DI NAVIGAZIONE COMPLETO --- */}
+      <nav className="relative z-20 p-6 flex flex-wrap justify-between items-center max-w-7xl mx-auto w-full border-b border-stone-400/30 gap-4">
         <Link href="/" className={`${playfair.className} text-2xl font-bold text-white tracking-tight hover:text-amber-200 transition`}>
            Photo Platform
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
             <Link href="/dashboard">
-                <button className="px-5 py-2 bg-stone-100/10 hover:bg-stone-100/20 border border-stone-300/20 rounded-full text-sm font-bold text-white transition backdrop-blur-md flex items-center gap-2">
+                <button className="px-4 py-2 bg-stone-100/10 hover:bg-stone-100/20 border border-stone-300/20 rounded-full text-xs sm:text-sm font-bold text-white transition whitespace-nowrap">
                   🏠 Dashboard
                 </button>
             </Link>
-            <Link href="/">
-                <button className="hidden sm:block px-5 py-2 text-sm font-bold text-stone-200 hover:text-white transition">
-                  Torna alla Home
+            {/* Link alla pagina corrente (Evidenziato) */}
+            <Link href="/explore">
+                <button className="px-4 py-2 bg-stone-400/20 border border-stone-300/20 rounded-full text-xs sm:text-sm font-bold text-white transition whitespace-nowrap">
+                  📷 Gallery
+                </button>
+            </Link>
+            <Link href="/community">
+                <button className="px-4 py-2 hover:bg-stone-400/10 text-stone-200 hover:text-white rounded-full text-xs sm:text-sm font-bold transition whitespace-nowrap">
+                  🌍 Community
+                </button>
+            </Link>
+            <Link href="/challenges">
+                <button className="px-4 py-2 hover:bg-stone-400/10 text-stone-200 hover:text-white rounded-full text-xs sm:text-sm font-bold transition whitespace-nowrap">
+                  🏆 Sfide
+                </button>
+            </Link>
+            <Link href="/blog">
+                <button className="px-4 py-2 hover:bg-stone-400/10 text-stone-200 hover:text-white rounded-full text-xs sm:text-sm font-bold transition whitespace-nowrap">
+                  📘 Blog
                 </button>
             </Link>
         </div>
