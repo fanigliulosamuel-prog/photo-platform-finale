@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Playfair_Display } from 'next/font/google';
+
+const playfair = Playfair_Display({ subsets: ['latin'] });
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -11,6 +14,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Stato per il menu laterale
 
   // Dati Profilo
   const [username, setUsername] = useState("");
@@ -76,7 +80,7 @@ export default function SettingsPage() {
     }
   }
 
-  // Salva Profilo (Info Pubbliche) con Controllo Unicità
+  // Salva Profilo
   async function updateProfile() {
     try {
       setLoading(true);
@@ -128,16 +132,72 @@ export default function SettingsPage() {
   if (loading) return <div className="min-h-screen bg-stone-600 flex items-center justify-center text-white">Caricamento...</div>;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-y-auto p-4 md:p-8">
+    <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
       
-      <div className="fixed inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
-      <div className="fixed top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
+      {/* Texture Sfondo */}
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+      </div>
 
-      <div className="relative z-10 w-full max-w-4xl mx-auto space-y-8">
+      {/* Luci Ambientali Calde */}
+      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+      {/* --- SIDEBAR --- */}
+      <aside className={`fixed md:relative w-64 bg-stone-700/40 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 h-full transition-transform duration-300 z-50
+          ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+          
+          <h2 className="text-2xl font-bold text-white mb-10 tracking-tight">
+            Photo Platform
+          </h2>
+          
+          <button onClick={() => setIsMenuOpen(false)} className="absolute top-4 right-4 md:hidden text-stone-300 hover:text-white text-xl">
+            ✕
+          </button>
+
+          <nav className="flex flex-col gap-3 overflow-y-auto custom-scrollbar flex-1">
+            <Link href="/dashboard" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
+              🏠 Dashboard
+            </Link>
+            
+            <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
+            <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
+            <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
+            <Link href="/challenges" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🏆 Sfide</Link>
+            <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
+
+            <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
+            <Link href="/upload" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📤 Carica Foto</Link>
+            <Link href="/contracts" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📄 Genera Contratti</Link>
+            <Link href="/private" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🔒 Area Clienti</Link>
+
+            <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Account</p>
+            <Link href="/notifications" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🔔 Notifiche</Link>
+            
+            {/* Link Attivo */}
+            <Link href="/settings" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>⚙️ Impostazioni</Link>
+          </nav>
+          
+          <div className="mt-auto pt-6 border-t border-stone-500/30">
+            <button onClick={() => supabase.auth.signOut().then(() => router.push('/'))} className="text-stone-400 hover:text-stone-100 text-sm flex items-center gap-2 px-3 py-2 hover:bg-white/5 rounded-lg transition w-full text-left">
+              🚪 Esci
+            </button>
+          </div>
+      </aside>
+      
+      {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
+
+      {/* --- CONTENUTO PRINCIPALE --- */}
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative z-10">
         
-        <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-white">Impostazioni Account</h1>
-            <div className="flex gap-4 items-center">
+        <div className="flex items-center mb-6 md:hidden">
+            <button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">☰</button>
+            <h1 className={`${playfair.className} text-2xl font-bold text-white`}>Impostazioni</h1>
+        </div>
+
+        <div className="max-w-4xl mx-auto space-y-8">
+            <div className="flex justify-between items-center mb-4 hidden md:flex">
+                <h1 className="text-3xl font-bold text-white">Impostazioni Account</h1>
                 {isAdmin && (
                     <Link href="/admin">
                         <button className="text-sm bg-red-600 hover:bg-red-500 px-4 py-2 rounded-full text-white font-bold transition shadow-lg flex items-center gap-2">
@@ -145,63 +205,68 @@ export default function SettingsPage() {
                         </button>
                     </Link>
                 )}
-                <Link href="/dashboard" className="text-sm text-stone-200 hover:text-white transition flex items-center gap-2">← Dashboard</Link>
             </div>
-        </div>
-
-        {/* --- SEZIONE 1: PROFILO PUBBLICO --- */}
-        <div className="bg-stone-400/40 backdrop-blur-xl border border-stone-300/50 p-8 rounded-3xl shadow-xl">
-            <h2 className="text-xl font-bold text-amber-100 mb-6 border-b border-stone-500/30 pb-2">Profilo Pubblico</h2>
             
-            <div className="flex flex-col md:flex-row gap-8">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-stone-300/50 shadow-lg relative group bg-stone-600">
-                    {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-4xl text-stone-300">👤</div>}
-                    <label className="absolute inset-0 bg-stone-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition"><span className="text-xs font-bold text-white">CAMBIA</span><input type="file" className="hidden" accept="image/*" onChange={uploadAvatar} disabled={uploading} /></label>
-                    </div>
-                    {uploading && <p className="text-xs text-amber-200 animate-pulse">Caricamento...</p>}
-                </div>
+            {/* Bottone Admin per Mobile */}
+            {isAdmin && (
+                 <div className="md:hidden mb-6">
+                    <Link href="/admin" className="block text-center text-sm bg-red-600 hover:bg-red-500 px-4 py-2 rounded-full text-white font-bold transition shadow-lg">
+                        ⚠️ Vai al Pannello Admin
+                    </Link>
+                 </div>
+            )}
 
-                <div className="flex-1 space-y-5">
-                    <div>
-                        <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Username</label>
-                        <input 
-                            type="text" 
-                            value={username} 
-                            onChange={(e) => setUsername(e.target.value)} 
-                            className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none"
-                        />
-                        <p className="text-[10px] text-stone-300 mt-1">Deve essere unico.</p>
+            {/* --- SEZIONE 1: PROFILO PUBBLICO --- */}
+            <div className="bg-stone-400/40 backdrop-blur-xl border border-stone-300/50 p-6 md:p-8 rounded-3xl shadow-xl">
+                <h2 className="text-xl font-bold text-amber-100 mb-6 border-b border-stone-500/30 pb-2">Profilo Pubblico</h2>
+                
+                <div className="flex flex-col md:flex-row gap-8">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-stone-300/50 shadow-lg relative group bg-stone-600">
+                        {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-4xl text-stone-300">👤</div>}
+                        <label className="absolute inset-0 bg-stone-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition"><span className="text-xs font-bold text-white">CAMBIA</span><input type="file" className="hidden" accept="image/*" onChange={uploadAvatar} disabled={uploading} /></label>
+                        </div>
+                        {uploading && <p className="text-xs text-amber-200 animate-pulse">Caricamento...</p>}
                     </div>
-                    <div><label className="block text-xs font-bold text-stone-200 uppercase mb-2">Città</label><input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none"/></div>
-                    <div><label className="block text-xs font-bold text-stone-200 uppercase mb-2">Bio</label><textarea value={bio} onChange={(e) => setBio(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none h-24 resize-none"/></div>
-                    <button onClick={updateProfile} className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg transition">Salva Profilo</button>
+
+                    <div className="flex-1 space-y-5">
+                        <div>
+                            <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Username</label>
+                            <input 
+                                type="text" 
+                                value={username} 
+                                onChange={(e) => setUsername(e.target.value)} 
+                                className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none"
+                            />
+                            <p className="text-[10px] text-stone-300 mt-1">Deve essere unico.</p>
+                        </div>
+                        <div><label className="block text-xs font-bold text-stone-200 uppercase mb-2">Città</label><input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none"/></div>
+                        <div><label className="block text-xs font-bold text-stone-200 uppercase mb-2">Bio</label><textarea value={bio} onChange={(e) => setBio(e.target.value)} className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none h-24 resize-none"/></div>
+                        <button onClick={updateProfile} className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg transition">Salva Profilo</button>
+                    </div>
+                </div>
+            </div>
+
+            {/* --- SEZIONE 2: SICUREZZA --- */}
+            <div className="bg-stone-400/20 backdrop-blur-md border border-stone-300/30 p-6 md:p-8 rounded-3xl shadow-xl pb-20">
+                <h2 className="text-xl font-bold text-amber-100 mb-6 border-b border-stone-500/30 pb-2">Sicurezza & Accesso</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <label className="block text-xs font-bold text-stone-300 uppercase">Cambia Email</label>
+                        <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-stone-600/30 border border-stone-500/30 rounded-xl p-3 text-white focus:border-amber-400 outline-none" />
+                        <button onClick={updateEmail} className="w-full py-2 border border-stone-400 text-stone-200 font-bold rounded-xl hover:bg-stone-500/30 transition text-sm">Aggiorna Email</button>
+                    </div>
+
+                    <div className="space-y-4">
+                        <label className="block text-xs font-bold text-stone-300 uppercase">Nuova Password</label>
+                        <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-stone-600/30 border border-stone-500/30 rounded-xl p-3 text-white focus:border-amber-400 outline-none" />
+                        <button onClick={updatePassword} className="w-full py-2 border border-stone-400 text-stone-200 font-bold rounded-xl hover:bg-stone-500/30 transition text-sm">Aggiorna Password</button>
+                    </div>
                 </div>
             </div>
         </div>
-
-        {/* --- SEZIONE 2: SICUREZZA --- */}
-        <div className="bg-stone-400/20 backdrop-blur-md border border-stone-300/30 p-8 rounded-3xl shadow-xl">
-            <h2 className="text-xl font-bold text-amber-100 mb-6 border-b border-stone-500/30 pb-2">Sicurezza & Accesso</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Cambio Email */}
-                <div className="space-y-4">
-                    <label className="block text-xs font-bold text-stone-300 uppercase">Cambia Email</label>
-                    <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-stone-600/30 border border-stone-500/30 rounded-xl p-3 text-white focus:border-amber-400 outline-none" />
-                    <button onClick={updateEmail} className="w-full py-2 border border-stone-400 text-stone-200 font-bold rounded-xl hover:bg-stone-500/30 transition text-sm">Aggiorna Email</button>
-                </div>
-
-                {/* Cambio Password */}
-                <div className="space-y-4">
-                    <label className="block text-xs font-bold text-stone-300 uppercase">Nuova Password</label>
-                    <input type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-stone-600/30 border border-stone-500/30 rounded-xl p-3 text-white focus:border-amber-400 outline-none" />
-                    <button onClick={updatePassword} className="w-full py-2 border border-stone-400 text-stone-200 font-bold rounded-xl hover:bg-stone-500/30 transition text-sm">Aggiorna Password</button>
-                </div>
-            </div>
-        </div>
-
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
