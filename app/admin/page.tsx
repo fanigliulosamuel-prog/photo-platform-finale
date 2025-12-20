@@ -26,7 +26,7 @@ export default function AdminPage() {
   
   // STATI
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isChecking, setIsChecking] = useState(true); // Nuovo stato per evitare flash
+  const [isChecking, setIsChecking] = useState(true);
   const [secretInput, setSecretInput] = useState("");
   const [loginError, setLoginError] = useState(false);
   
@@ -39,19 +39,23 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'photos'>('photos');
 
   useEffect(() => {
-    // Controllo se hai già fatto login in questa sessione
-    const adminToken = localStorage.getItem('is_super_admin');
+    // MODIFICA: Usiamo sessionStorage invece di localStorage
+    // Questo resetta l'accesso ogni volta che chiudi la scheda o il browser
+    const adminToken = sessionStorage.getItem('is_super_admin');
+    
     if (adminToken === 'true') {
       setIsAuthorized(true);
       fetchData();
     }
-    setIsChecking(false); // Controllo finito
+    // Ritardo minimo per evitare flash su mobile
+    setTimeout(() => setIsChecking(false), 500);
   }, []);
 
   const handleAdminLogin = (e: React.FormEvent) => {
       e.preventDefault();
       if (secretInput === ADMIN_SECRET) {
-          localStorage.setItem('is_super_admin', 'true');
+          // Salva solo per questa sessione
+          sessionStorage.setItem('is_super_admin', 'true');
           setIsAuthorized(true);
           fetchData();
       } else {
@@ -75,6 +79,18 @@ export default function AdminPage() {
           await supabase.from('photos').delete().eq('id', photo.id);
           const fileName = photo.url.split('/').pop();
           if (fileName) await supabase.storage.from('uploads').remove([fileName]);
+          
+          // Notifica autore
+          const { data: author } = await supabase.from('profiles').select('id').eq('username', photo.author_name).single();
+          if (author) {
+             await supabase.from('notifications').insert([{
+                 user_id: author.id,
+                 actor_name: "Admin",
+                 type: "alert",
+                 message: `ha rimosso la tua foto "${photo.title}".`,
+                 is_read: false
+             }]);
+          }
           alert("Foto rimossa.");
       } catch (error: any) {
           alert("Errore eliminazione: " + error.message);
@@ -93,7 +109,7 @@ export default function AdminPage() {
   }
 
   function logoutAdmin() {
-      localStorage.removeItem('is_super_admin');
+      sessionStorage.removeItem('is_super_admin'); // Rimuovi dalla sessione
       setIsAuthorized(false);
       setSecretInput("");
   }
