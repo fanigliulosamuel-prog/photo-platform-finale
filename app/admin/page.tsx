@@ -23,28 +23,29 @@ type Photo = {
 
 export default function AdminPage() {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [loading, setLoading] = useState(true);
   
-  // Login Admin State
+  // STATI
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true); // Nuovo stato per evitare flash
   const [secretInput, setSecretInput] = useState("");
   const [loginError, setLoginError] = useState(false);
-  const ADMIN_SECRET = "admin2025"; // La tua password
+  
+  // PASSWORD
+  const ADMIN_SECRET = "admin2025"; 
 
-  // Dati
+  // DATI
   const [users, setUsers] = useState<User[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [activeTab, setActiveTab] = useState<'users' | 'photos'>('photos');
 
   useEffect(() => {
-    // Controllo immediato all'avvio
+    // Controllo se hai già fatto login in questa sessione
     const adminToken = localStorage.getItem('is_super_admin');
     if (adminToken === 'true') {
       setIsAuthorized(true);
       fetchData();
-    } else {
-      setLoading(false); // Smette di caricare e mostra il form di login
     }
+    setIsChecking(false); // Controllo finito
   }, []);
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -55,39 +56,25 @@ export default function AdminPage() {
           fetchData();
       } else {
           setLoginError(true);
+          setSecretInput("");
       }
   };
 
   async function fetchData() {
-    setLoading(true);
     const { data: usersData } = await supabase.from('profiles').select('*');
     if (usersData) setUsers(usersData);
 
     const { data: photosData } = await supabase.from('photos').select('*').order('created_at', { ascending: false });
     if (photosData) setPhotos(photosData);
-    setLoading(false);
   }
 
   async function deletePhoto(photo: Photo) {
       if(!confirm(`Eliminare la foto "${photo.title}"?`)) return;
       setPhotos(photos.filter(p => p.id !== photo.id));
       try {
-          const { error } = await supabase.from('photos').delete().eq('id', photo.id);
-          if (error) throw error;
+          await supabase.from('photos').delete().eq('id', photo.id);
           const fileName = photo.url.split('/').pop();
           if (fileName) await supabase.storage.from('uploads').remove([fileName]);
-          
-          // Notifica autore
-          const { data: author } = await supabase.from('profiles').select('id').eq('username', photo.author_name).single();
-          if (author) {
-             await supabase.from('notifications').insert([{
-                 user_id: author.id,
-                 actor_name: "Admin",
-                 type: "alert",
-                 message: `ha rimosso la tua foto "${photo.title}".`,
-                 is_read: false
-             }]);
-          }
           alert("Foto rimossa.");
       } catch (error: any) {
           alert("Errore eliminazione: " + error.message);
@@ -97,8 +84,7 @@ export default function AdminPage() {
   async function deleteUser(user: User) {
       if(!confirm(`ATTENZIONE: Eliminare l'utente ${user.username}?`)) return;
       try {
-          const { error } = await supabase.from('profiles').delete().eq('id', user.id);
-          if(error) throw error;
+          await supabase.from('profiles').delete().eq('id', user.id);
           setUsers(users.filter(u => u.id !== user.id));
           alert("Utente rimosso.");
       } catch (error: any) {
@@ -112,12 +98,15 @@ export default function AdminPage() {
       setSecretInput("");
   }
 
+  // --- LOADING INIZIALE ---
+  if (isChecking) return <div className="min-h-screen bg-stone-900 flex items-center justify-center text-white">Caricamento...</div>;
+
   // --- VISTA 1: LOGIN (Se non autorizzato) ---
   if (!isAuthorized) return (
     <main className="min-h-screen bg-stone-900 text-white flex items-center justify-center p-4">
         <div className="w-full max-w-sm bg-stone-800 border border-red-900/50 p-8 rounded-2xl shadow-2xl text-center">
             <h1 className="text-3xl font-bold text-white mb-2">Area Riservata</h1>
-            <p className="text-stone-400 text-sm mb-6">Inserisci il codice di sicurezza per gestire la piattaforma.</p>
+            <p className="text-stone-400 text-sm mb-6">Inserisci la password amministratore.</p>
             
             <form onSubmit={handleAdminLogin} className="space-y-4">
                 <input 
@@ -152,7 +141,7 @@ export default function AdminPage() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
             <div>
                 <h1 className={`${playfair.className} text-4xl font-bold text-white`}>Pannello Admin</h1>
-                <p className="text-stone-200 text-sm">Gestione Totale Piattaforma</p>
+                <p className="text-stone-200 text-sm">Accesso Segreto Attivo</p>
             </div>
             <div className="flex gap-4">
                 <Link href="/dashboard"><button className="px-6 py-2 bg-stone-100/10 hover:bg-stone-100/20 rounded-full transition text-sm text-white">Torna alla Dashboard</button></Link>
