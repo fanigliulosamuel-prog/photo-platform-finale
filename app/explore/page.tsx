@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Playfair_Display } from 'next/font/google';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+const playfair = Playfair_Display({ subsets: ['latin'] });
 
 type Photo = {
   id: number;
@@ -78,7 +81,7 @@ export default function ExplorePage() {
 
       {/* Luci Ambientali Calde */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="flex w-full relative z-10 h-screen">
 
@@ -133,13 +136,13 @@ export default function ExplorePage() {
                 <button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">
                 ☰
                 </button>
-                <h1 className="text-2xl font-bold text-white font-serif">Galleria</h1>
+                <h1 className={`${playfair.className} text-2xl font-bold text-white`}>Galleria</h1>
             </div>
 
             <div className="max-w-7xl mx-auto w-full">
                 
                 <div className="text-center mb-12">
-                <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-xl tracking-tight hidden md:block font-serif">
+                <h1 className={`${playfair.className} text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-xl tracking-tight hidden md:block`}>
                     Esplora Visioni
                 </h1>
                 <p className="text-stone-200 text-lg font-light max-w-2xl mx-auto hidden md:block">
@@ -215,7 +218,7 @@ export default function ExplorePage() {
                     
                     {photos.length === 0 && (
                     <div className="col-span-full text-center py-20 bg-stone-400/20 rounded-3xl border border-dashed border-stone-400/30">
-                        <p className="text-stone-200 text-xl font-light">Nessun risultato trovato.</p>
+                        <p className="text-stone-200 text-xl font-light">Nessun risultato trovato per "{search}" in {category}.</p>
                         <button onClick={() => {setSearch(""); setCategory("Tutti")}} className="mt-4 text-white underline hover:text-indigo-400">Resetta filtri</button>
                     </div>
                     )}

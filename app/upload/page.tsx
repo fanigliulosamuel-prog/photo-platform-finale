@@ -7,9 +7,10 @@ import Link from 'next/link';
 
 // LISTA CATEGORIE ESTESA
 const CATEGORIES = [
+  "Sfida del Mese", // Importante per la sfida
   "Ritratti", "Paesaggi", "Street", "Architettura", "Natura",
   "Animali", "Viaggi", "Moda", "Food", "Sport", "Macro",
-  "Bianco e Nero", "Eventi", "Astratto", "Sfida del Mese"
+  "Bianco e Nero", "Eventi", "Astratto"
 ];
 
 export default function UploadPage() {
@@ -22,7 +23,7 @@ export default function UploadPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [category, setCategory] = useState('Ritratti');
   const [uploading, setUploading] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Stato per il menu laterale
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   // Dati EXIF
@@ -124,7 +125,7 @@ export default function UploadPage() {
 
       alert("Foto caricata con successo!");
       
-      // Se è per la sfida, torna alle sfide, altrimenti alla galleria
+      // Reindirizzamento intelligente
       if (category === "Sfida del Mese") {
           router.push('/challenges');
       } else {
@@ -278,7 +279,7 @@ export default function UploadPage() {
             </form>
             </div>
         </main>
-      </div> {}
-    </div> 
+      </div>
+    </div>
   );
 }
