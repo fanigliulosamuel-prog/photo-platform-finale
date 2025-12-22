@@ -13,9 +13,10 @@ const CURRENT_CHALLENGE = {
   id: 1,
   title: "Luci nella Notte",
   description: "Cattura l'atmosfera della città quando il sole tramonta. Neon, lampioni, scie luminose. Mostraci il lato nascosto della tua metropoli.",
-  // Imposta una data futura per vedere la sfida attiva, o passata per vedere il vincitore
+  // Imposta una data futura per vedere la sfida attiva
   deadline: new Date("2025-12-31T23:59:59"), 
-  category: "Street", // La categoria che l'utente deve selezionare
+  // FIX: Usiamo una categoria speciale ed esclusiva per la sfida
+  category: "Sfida del Mese", 
   prize: "🏆 Badge 'Master of Light' sul profilo + 1 settimana in Home Page"
 };
 
@@ -35,8 +36,8 @@ export default function ChallengesPage() {
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isEnded, setIsEnded] = useState(false); // Stato per sapere se la sfida è finita
-  const [winner, setWinner] = useState<Photo | null>(null); // Il vincitore
+  const [isEnded, setIsEnded] = useState(false); 
+  const [winner, setWinner] = useState<Photo | null>(null); 
 
   // 1. Timer alla rovescia
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function ChallengesPage() {
 
       if (distance < 0) {
         clearInterval(timer);
-        setIsEnded(true); // Sfida terminata!
+        setIsEnded(true); 
       } else {
         setTimeLeft({
           days: Math.floor(distance / (1000 * 60 * 60 * 24)),
@@ -60,20 +61,19 @@ export default function ChallengesPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Carica le foto e determina il vincitore
+  // 2. Carica le foto della sfida
   useEffect(() => {
     async function fetchChallengePhotos() {
-      // Prende le foto che corrispondono alla categoria della sfida
       const { data, error } = await supabase
         .from('photos')
         .select('*')
-        .eq('category', CURRENT_CHALLENGE.category) 
-        .order('likes', { ascending: false }); // Ordina per Like (il primo è il primo in classifica)
+        .eq('category', CURRENT_CHALLENGE.category) // Filtra solo per "Sfida del Mese"
+        .order('likes', { ascending: false });
 
       if (!error && data) {
         setPhotos(data);
         if (data.length > 0) {
-            setWinner(data[0]); // Il primo della lista è il potenziale vincitore
+            setWinner(data[0]); 
         }
       }
       setLoading(false);
@@ -120,7 +120,6 @@ export default function ChallengesPage() {
 
       <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative z-10">
         
-        {/* Intestazione Mobile */}
         <div className="flex items-center mb-8 md:hidden">
             <button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">☰</button>
             <h1 className={`${playfair.className} text-2xl font-bold text-white`}>Sfide</h1>
@@ -129,7 +128,6 @@ export default function ChallengesPage() {
         {/* --- HERO SECTION --- */}
         <div className="relative z-10 p-8 md:p-12 text-center max-w-5xl mx-auto">
           
-          {/* Badge Stato Sfida */}
           <span className={`inline-block py-1 px-4 rounded-full text-xs font-bold uppercase tracking-widest mb-6 border animate-pulse 
             ${isEnded ? "bg-red-500/20 text-red-300 border-red-500/30" : "bg-amber-500/20 text-amber-300 border-amber-500/30"}`}>
             {isEnded ? "● Sfida Terminata" : "● Sfida Attiva"}
@@ -143,13 +141,11 @@ export default function ChallengesPage() {
             {CURRENT_CHALLENGE.description}
           </p>
 
-          {/* BOX PREMIO */}
           <div className="bg-amber-900/20 border border-amber-500/30 rounded-2xl p-6 max-w-lg mx-auto mb-12 backdrop-blur-md">
             <h3 className="text-amber-200 font-bold uppercase text-sm tracking-wider mb-2">🎁 Premio per il vincitore</h3>
             <p className="text-white font-medium text-lg">{CURRENT_CHALLENGE.prize}</p>
           </div>
 
-          {/* SE SFIDA ATTIVA: TIMER E PARTECIPA */}
           {!isEnded ? (
             <>
                 <div className="flex justify-center gap-4 md:gap-8 mb-12">
@@ -166,17 +162,17 @@ export default function ChallengesPage() {
                 })}
                 </div>
 
-                <Link href="/upload">
-                <button className="px-10 py-4 bg-stone-100 text-stone-900 text-lg font-bold rounded-full hover:scale-105 transition transform shadow-lg hover:shadow-amber-500/20">
-                    Partecipa Ora 📸
-                </button>
+                {/* FIX: Link che pre-imposta la categoria */}
+                <Link href={`/upload?category=${encodeURIComponent(CURRENT_CHALLENGE.category)}`}>
+                  <button className="px-10 py-4 bg-stone-100 text-stone-900 text-lg font-bold rounded-full hover:scale-105 transition transform shadow-lg hover:shadow-amber-500/20">
+                      Partecipa Ora 📸
+                  </button>
                 </Link>
                 <p className="text-stone-400 text-xs mt-4">
-                    Assicurati di selezionare la categoria <strong>"{CURRENT_CHALLENGE.category}"</strong> quando carichi!
+                    La categoria <strong>"{CURRENT_CHALLENGE.category}"</strong> verrà selezionata automaticamente.
                 </p>
             </>
           ) : (
-             /* SE SFIDA FINITA: MOSTRA VINCITORE */
              winner && (
                 <div className="mb-16 animate-bounce-slow">
                     <h2 className="text-4xl font-bold text-amber-300 mb-6 drop-shadow-md">🏆 Il Vincitore è {winner.author_name}!</h2>
@@ -210,7 +206,6 @@ export default function ChallengesPage() {
               {photos.map((photo, index) => (
                 <Link href={`/photo/${photo.id}`} key={photo.id} className="group relative block break-inside-avoid">
                   
-                  {/* Podio */}
                   {index === 0 && <div className="absolute -top-4 -right-4 z-20 text-5xl drop-shadow-xl animate-pulse">🥇</div>}
                   {index === 1 && <div className="absolute -top-4 -right-4 z-20 text-4xl drop-shadow-lg">🥈</div>}
                   {index === 2 && <div className="absolute -top-4 -right-4 z-20 text-4xl drop-shadow-lg">🥉</div>}
@@ -223,7 +218,6 @@ export default function ChallengesPage() {
                       className="w-full h-full object-cover transition duration-700" 
                     />
                     
-                    {/* Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-transparent to-transparent flex flex-col justify-end p-6">
                       <p className="font-bold text-lg text-white mb-1">{photo.title}</p>
                       <div className="flex justify-between items-center">

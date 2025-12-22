@@ -2,11 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Playfair_Display } from 'next/font/google';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-const playfair = Playfair_Display({ subsets: ['latin'] });
 
 type Photo = {
   id: number;
@@ -17,6 +14,7 @@ type Photo = {
   likes: number;
 }
 
+// LISTA CATEGORIE ESTESA (Esclusa "Sfida del Mese" che è a parte)
 const CATEGORIES = [
   "Tutti", "Ritratti", "Paesaggi", "Street", "Architettura", 
   "Natura", "Animali", "Viaggi", "Moda", "Food", 
@@ -25,6 +23,7 @@ const CATEGORIES = [
 
 export default function ExplorePage() {
   const router = useRouter();
+  
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [category, setCategory] = useState("Tutti");
   const [search, setSearch] = useState(""); 
@@ -33,14 +32,20 @@ export default function ExplorePage() {
 
   async function fetchPhotos() {
     setLoading(true);
+    
     let query = supabase.from('photos').select('*');
 
-    // Filtro per nascondere foto private
+    // 1. FILTRO SICUREZZA: Mostra solo foto PUBBLICHE (senza progetto privato)
     query = query.is('project_id', null);
 
+    // 2. ESCLUDI SFIDE: Le foto della sfida vanno nella pagina Sfide
+    query = query.neq('category', 'Sfida del Mese');
+
+    // 3. Filtri Utente
     if (category !== "Tutti") {
       query = query.eq('category', category);
     }
+
     if (search.trim() !== "") {
       query = query.or(`title.ilike.%${search}%,author_name.ilike.%${search}%`);
     }
@@ -48,6 +53,7 @@ export default function ExplorePage() {
     query = query.order('created_at', { ascending: false });
 
     const { data, error } = await query;
+
     if (!error) {
       setPhotos(data || []);
     }
@@ -58,20 +64,21 @@ export default function ExplorePage() {
     const delayDebounceFn = setTimeout(() => {
       fetchPhotos();
     }, 300);
+
     return () => clearTimeout(delayDebounceFn);
   }, [category, search]);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
       
-      {/* Texture Sfondo */}
+      {/* Texture Grana */}
       <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
       {/* Luci Ambientali Calde */}
-      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
 
       {/* --- SIDEBAR --- */}
       <aside className={`fixed md:relative w-64 bg-stone-700/40 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 h-full transition-transform duration-300 z-50
@@ -94,7 +101,7 @@ export default function ExplorePage() {
             {/* Link Attivo */}
             <Link href="/explore" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
-            <Link href="/challenges" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🏆 Sfide del Mese</Link>
+            <Link href="/challenges" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🏆 Sfide</Link>
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
 
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
@@ -121,14 +128,16 @@ export default function ExplorePage() {
         
         {/* Intestazione Mobile */}
         <div className="flex items-center mb-6 md:hidden">
-            <button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">☰</button>
-            <h1 className={`${playfair.className} text-2xl font-bold text-white`}>Galleria</h1>
+            <button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">
+              ☰
+            </button>
+            <h1 className="text-2xl font-bold text-white">Galleria</h1>
         </div>
 
         <div className="max-w-7xl mx-auto">
             
             <div className="text-center mb-12">
-            <h1 className={`${playfair.className} text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-xl tracking-tight hidden md:block`}>
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-xl tracking-tight hidden md:block">
                 Esplora Visioni
             </h1>
             <p className="text-stone-200 text-lg font-light max-w-2xl mx-auto hidden md:block">
