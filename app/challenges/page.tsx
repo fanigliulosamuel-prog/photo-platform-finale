@@ -5,22 +5,25 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// Dati Mock per simulare lo stato della sfida (da sostituire con chiamate DB reali)
+// Dati Mock per simulare lo stato della sfida
 const MOCK_CHALLENGE = {
   theme: "Luci e Ombre",
   description: "Cattura il contrasto drammatico tra luce e oscurità. Gioca con le silhouette e i tagli di luce.",
   endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), // Fine mese corrente
-  status: "active", // 'active', 'calculating', 'completed'
+  status: "active",
   participants: 142,
-  daysLeft: 12
+  daysLeft: 12,
+  // Badge specifico per questa sfida
+  prizeBadge: "🌓 Maestro di Luci" 
 };
 
+// Esempio di vincitore con badge tematico della sfida precedente
 const PAST_WINNER = {
   username: "MarcoRossi_Ph",
   image: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
   title: "Riflessi Urbani",
   month: "Novembre",
-  badge: "🏆"
+  badge: "🏙️ Urban Master" // Badge attinente alla sfida precedente
 };
 
 function ChallengesContent() {
@@ -93,8 +96,22 @@ function ChallengesContent() {
              <div className="mb-12 text-center relative">
                <span className="inline-block py-1 px-3 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold tracking-wider uppercase mb-3 border border-amber-500/30">Sfida del Mese</span>
                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">{MOCK_CHALLENGE.theme}</h1>
-               <p className="text-xl text-stone-200 max-w-2xl mx-auto font-light leading-relaxed">{MOCK_CHALLENGE.description}</p>
+               <p className="text-xl text-stone-200 max-w-2xl mx-auto font-light leading-relaxed mb-6">{MOCK_CHALLENGE.description}</p>
                
+               {/* --- RIQUADRO PREMI (AGGIUNTO) --- */}
+               <div className="inline-block bg-stone-800/60 backdrop-blur-md border border-amber-500/30 rounded-2xl p-5 max-w-2xl shadow-xl shadow-amber-900/10 transform hover:scale-[1.01] transition-transform">
+                  <div className="flex flex-col md:flex-row items-center gap-3 text-center md:text-left">
+                    <div className="bg-amber-500/20 p-3 rounded-full text-2xl">🏆</div>
+                    <div>
+                      <h3 className="text-amber-300 font-bold text-lg">In Palio: Badge Esclusivo "{MOCK_CHALLENGE.prizeBadge}"</h3>
+                      <p className="text-stone-300 text-sm mt-1">
+                        + Visibilità garantita in Home Page per 24h. <span className="text-stone-400 italic text-xs block md:inline mt-1 md:mt-0">(Il badge viene assegnato automaticamente al vincitore a fine sfida)</span>
+                      </p>
+                    </div>
+                  </div>
+               </div>
+               {/* ---------------------------------- */}
+
                <div className="mt-8 flex justify-center gap-4">
                  <div className="bg-stone-800/50 backdrop-blur-md border border-stone-600 rounded-xl px-6 py-3 flex flex-col items-center">
                    <span className="text-xs text-stone-400 uppercase">Tempo Rimasto</span>
@@ -125,10 +142,13 @@ function ChallengesContent() {
                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                      <div className="absolute bottom-4 left-4">
                        <p className="text-white font-bold text-lg leading-tight">{PAST_WINNER.title}</p>
-                       <p className="text-amber-300 text-sm flex items-center gap-1">
-                         {PAST_WINNER.username} 
-                         <span title="Badge Vincitore" className="bg-amber-400 text-stone-900 text-[10px] px-1 rounded-full">{PAST_WINNER.badge}</span>
-                       </p>
+                       <div className="flex flex-col gap-1 mt-1">
+                          <p className="text-amber-300 text-sm font-medium">{PAST_WINNER.username}</p>
+                          {/* Badge Tematico Visualizzato */}
+                          <span title="Badge Vincitore Sfida Precedente" className="inline-block bg-amber-500/80 text-stone-900 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit">
+                            {PAST_WINNER.badge}
+                          </span>
+                       </div>
                      </div>
                    </div>
                    <p className="text-stone-300 text-xs italic text-center">"Una composizione magistrale che ha catturato l'essenza dell'autunno."</p>
