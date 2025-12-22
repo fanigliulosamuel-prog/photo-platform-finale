@@ -223,7 +223,13 @@ export default function AdminPage() {
                                 <p className="font-bold text-lg text-white">{user.username || "Senza Nome"}</p>
                                 <p className="text-xs text-stone-300 font-mono">{user.id}</p>
                             </div>
-                            <button onClick={() => deleteUser(user)} className="bg-red-600/20 text-red-400 border border-red-600/50 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition">ELIMINA UTENTE</button>
+                            <div className="flex items-center gap-3">
+                                {/* Link al profilo utente */}
+                                <Link href={`/profile/${user.username}`} target="_blank" className="text-xs bg-stone-500 hover:bg-stone-400 text-white px-3 py-2 rounded-lg font-bold transition">
+                                    Vedi Profilo
+                                </Link>
+                                <button onClick={() => deleteUser(user)} className="bg-red-600/20 text-red-400 border border-red-600/50 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition">ELIMINA UTENTE</button>
+                            </div>
                         </div>
                     ))}
                     {users.length === 0 && <p className="text-center text-stone-200 py-10">Nessun utente registrato.</p>}
