@@ -88,7 +88,6 @@ export default function AdminPage() {
 
           if (author) {
              // Invia notifica di sistema
-             // Nota: photo_id è null perché la foto viene cancellata
              await supabase.from('notifications').insert([{
                  user_id: author.id,
                  actor_name: "Admin",
@@ -121,7 +120,6 @@ export default function AdminPage() {
       
       try {
           // 1. Simulazione invio Email
-          // In un'app reale qui useresti un servizio come Resend o SendGrid
           alert(`📧 SISTEMA: Email di avviso inviata all'ID ${user.id}.\nOggetto: Cancellazione Account\nMessaggio: "Gentile utente, il tuo account è stato rimosso per violazione dei termini."`);
 
           // 2. Cancella profilo dal DB
@@ -209,7 +207,7 @@ export default function AdminPage() {
                 <button onClick={() => setActiveTab('users')} className={`px-6 py-2 rounded-xl font-bold transition shadow-md ${activeTab === 'users' ? 'bg-red-700 text-white' : 'bg-stone-400/30 text-stone-100 hover:bg-stone-400/50'}`}>Utenti ({users.length})</button>
             </div>
             
-            {/* BARRA DI RICERCA UTENTI (Visibile solo nella tab Utenti) */}
+            {/* BARRA DI RICERCA UTENTI */}
             {activeTab === 'users' && (
                 <div className="relative w-full md:w-64">
                     <input 
@@ -233,6 +231,12 @@ export default function AdminPage() {
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-900/80 opacity-0 group-hover:opacity-100 transition p-2 text-center">
                                 <p className="text-xs font-bold mb-2 line-clamp-1 text-white">{photo.title}</p>
                                 <p className="text-[10px] text-stone-300 mb-2">di {photo.author_name}</p>
+                                
+                                {/* Link per vedere la foto reale - Apre nuova scheda */}
+                                <a href={`/photo/${photo.id}`} target="_blank" rel="noopener noreferrer" className="mb-2">
+                                    <button className="text-xs bg-stone-600 hover:bg-stone-500 px-2 py-1 rounded text-white cursor-pointer">Vedi Foto</button>
+                                </a>
+
                                 <button onClick={() => deletePhoto(photo)} className="bg-red-600 text-white text-xs px-3 py-1 rounded hover:bg-red-500 font-bold shadow-lg transform hover:scale-105 transition">ELIMINA</button>
                             </div>
                         </div>
@@ -241,22 +245,23 @@ export default function AdminPage() {
                 </div>
             ) : (
                 <div className="space-y-2">
-                    {/* Usa la lista filtrata invece di users completo */}
+                    {/* Usa la lista filtrata */}
                     {filteredUsers.map(user => (
                         <div key={user.id} className="flex justify-between items-center bg-stone-600/30 p-4 rounded-xl border border-stone-500/30 hover:bg-stone-600/50 transition">
-                            <div>
-                                <p className="font-bold text-lg text-white">{user.username || "Senza Nome"}</p>
-                                <p className="text-xs text-stone-300 font-mono">{user.id}</p>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <p className="font-bold text-lg text-white">{user.username || "Senza Nome"}</p>
+                                    
+                                    {/* LINK AL PROFILO - APRE NUOVA SCHEDA */}
+                                    <a href={`/profile/${user.username}`} target="_blank" rel="noopener noreferrer" className="text-xs bg-stone-500 hover:bg-stone-400 text-white px-3 py-1 rounded-lg font-bold transition flex items-center gap-1">
+                                        Vedi Profilo ↗
+                                    </a>
+                                </div>
+                                <p className="text-xs text-stone-400 font-mono">ID: {user.id}</p>
                             </div>
-                            <div className="flex items-center gap-3">
-                                {/* Link al profilo utente */}
-                                <Link href={`/profile/${user.username}`} target="_blank" className="text-xs bg-stone-500 hover:bg-stone-400 text-white px-3 py-2 rounded-lg font-bold transition">
-                                    Vedi Profilo
-                                </Link>
-                                <button onClick={() => deleteUser(user)} className="bg-red-600/20 text-red-400 border border-red-600/50 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition whitespace-nowrap">
-                                    ELIMINA UTENTE
-                                </button>
-                            </div>
+                            <button onClick={() => deleteUser(user)} className="bg-red-600/20 text-red-400 border border-red-600/50 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition whitespace-nowrap ml-4">
+                                ELIMINA UTENTE
+                            </button>
                         </div>
                     ))}
                     {filteredUsers.length === 0 && <p className="text-center text-stone-200 py-10">Nessun utente trovato.</p>}
