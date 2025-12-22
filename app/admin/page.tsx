@@ -30,6 +30,9 @@ export default function AdminPage() {
   const [secretInput, setSecretInput] = useState("");
   const [loginError, setLoginError] = useState(false);
   
+  // STATI RICERCA
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+  
   // PASSWORD
   const ADMIN_SECRET = "admin2025"; 
 
@@ -138,6 +141,11 @@ export default function AdminPage() {
       setIsAuthorized(false);
       setSecretInput("");
   }
+  
+  // Filtra utenti in base alla ricerca
+  const filteredUsers = users.filter(user => 
+    user.username && user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
+  );
 
   // --- LOADING ---
   if (isChecking) return <div className="min-h-screen bg-stone-900 flex items-center justify-center text-white">Caricamento...</div>;
@@ -195,9 +203,25 @@ export default function AdminPage() {
             </div>
         </div>
 
-        <div className="flex gap-4 mb-8">
-            <button onClick={() => setActiveTab('photos')} className={`px-6 py-2 rounded-xl font-bold transition shadow-md ${activeTab === 'photos' ? 'bg-red-700 text-white' : 'bg-stone-400/30 text-stone-100 hover:bg-stone-400/50'}`}>Foto ({photos.length})</button>
-            <button onClick={() => setActiveTab('users')} className={`px-6 py-2 rounded-xl font-bold transition shadow-md ${activeTab === 'users' ? 'bg-red-700 text-white' : 'bg-stone-400/30 text-stone-100 hover:bg-stone-400/50'}`}>Utenti ({users.length})</button>
+        <div className="flex flex-col md:flex-row justify-between gap-4 mb-8">
+            <div className="flex gap-4">
+                <button onClick={() => setActiveTab('photos')} className={`px-6 py-2 rounded-xl font-bold transition shadow-md ${activeTab === 'photos' ? 'bg-red-700 text-white' : 'bg-stone-400/30 text-stone-100 hover:bg-stone-400/50'}`}>Foto ({photos.length})</button>
+                <button onClick={() => setActiveTab('users')} className={`px-6 py-2 rounded-xl font-bold transition shadow-md ${activeTab === 'users' ? 'bg-red-700 text-white' : 'bg-stone-400/30 text-stone-100 hover:bg-stone-400/50'}`}>Utenti ({users.length})</button>
+            </div>
+            
+            {/* BARRA DI RICERCA UTENTI (Visibile solo nella tab Utenti) */}
+            {activeTab === 'users' && (
+                <div className="relative w-full md:w-64">
+                    <input 
+                        type="text" 
+                        placeholder="Cerca utente..." 
+                        value={userSearchTerm}
+                        onChange={(e) => setUserSearchTerm(e.target.value)}
+                        className="w-full px-4 py-2 bg-stone-800/50 border border-stone-600 rounded-xl text-white placeholder-stone-400 focus:outline-none focus:border-red-500/50 transition text-sm"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs">🔍</span>
+                </div>
+            )}
         </div>
 
         <div className="bg-stone-400/20 backdrop-blur-xl rounded-3xl p-6 border border-stone-300/30 shadow-2xl min-h-[400px]">
@@ -217,7 +241,8 @@ export default function AdminPage() {
                 </div>
             ) : (
                 <div className="space-y-2">
-                    {users.map(user => (
+                    {/* Usa la lista filtrata invece di users completo */}
+                    {filteredUsers.map(user => (
                         <div key={user.id} className="flex justify-between items-center bg-stone-600/30 p-4 rounded-xl border border-stone-500/30 hover:bg-stone-600/50 transition">
                             <div>
                                 <p className="font-bold text-lg text-white">{user.username || "Senza Nome"}</p>
@@ -228,11 +253,13 @@ export default function AdminPage() {
                                 <Link href={`/profile/${user.username}`} target="_blank" className="text-xs bg-stone-500 hover:bg-stone-400 text-white px-3 py-2 rounded-lg font-bold transition">
                                     Vedi Profilo
                                 </Link>
-                                <button onClick={() => deleteUser(user)} className="bg-red-600/20 text-red-400 border border-red-600/50 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition">ELIMINA UTENTE</button>
+                                <button onClick={() => deleteUser(user)} className="bg-red-600/20 text-red-400 border border-red-600/50 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition whitespace-nowrap">
+                                    ELIMINA UTENTE
+                                </button>
                             </div>
                         </div>
                     ))}
-                    {users.length === 0 && <p className="text-center text-stone-200 py-10">Nessun utente registrato.</p>}
+                    {filteredUsers.length === 0 && <p className="text-center text-stone-200 py-10">Nessun utente trovato.</p>}
                 </div>
             )}
         </div>
