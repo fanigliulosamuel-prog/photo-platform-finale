@@ -39,22 +39,19 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'photos'>('photos');
 
   useEffect(() => {
-    // MODIFICA: Usiamo sessionStorage invece di localStorage
-    // Questo resetta l'accesso ogni volta che chiudi la scheda o il browser
+    // Controllo se hai già fatto login in questa sessione
     const adminToken = sessionStorage.getItem('is_super_admin');
     
     if (adminToken === 'true') {
       setIsAuthorized(true);
       fetchData();
     }
-    // Ritardo minimo per evitare flash su mobile
     setTimeout(() => setIsChecking(false), 500);
   }, []);
 
   const handleAdminLogin = (e: React.FormEvent) => {
       e.preventDefault();
       if (secretInput === ADMIN_SECRET) {
-          // Salva solo per questa sessione
           sessionStorage.setItem('is_super_admin', 'true');
           setIsAuthorized(true);
           fetchData();
@@ -65,59 +62,87 @@ export default function AdminPage() {
   };
 
   async function fetchData() {
+    // Carica utenti
     const { data: usersData } = await supabase.from('profiles').select('*');
     if (usersData) setUsers(usersData);
 
+    // Carica foto
     const { data: photosData } = await supabase.from('photos').select('*').order('created_at', { ascending: false });
     if (photosData) setPhotos(photosData);
   }
 
+  // --- ELIMINAZIONE FOTO CON NOTIFICA ---
   async function deletePhoto(photo: Photo) {
-      if(!confirm(`Eliminare la foto "${photo.title}"?`)) return;
-      setPhotos(photos.filter(p => p.id !== photo.id));
+      if(!confirm(`Sei sicuro di voler eliminare la foto "${photo.title}"?`)) return;
+
       try {
-          await supabase.from('photos').delete().eq('id', photo.id);
-          const fileName = photo.url.split('/').pop();
-          if (fileName) await supabase.storage.from('uploads').remove([fileName]);
-          
-          // Notifica autore
-          const { data: author } = await supabase.from('profiles').select('id').eq('username', photo.author_name).single();
+          // 1. Cerca l'autore per notificargli la rimozione
+          const { data: author } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', photo.author_name)
+            .single();
+
           if (author) {
+             // Invia notifica di sistema
+             // Nota: photo_id è null perché la foto viene cancellata
              await supabase.from('notifications').insert([{
                  user_id: author.id,
                  actor_name: "Admin",
-                 type: "alert",
-                 message: `ha rimosso la tua foto "${photo.title}".`,
+                 type: "alert", 
+                 message: `ha rimosso la tua foto "${photo.title}" per violazione delle linee guida.`,
                  is_read: false
              }]);
           }
-          alert("Foto rimossa.");
+
+          // 2. Cancella foto dal DB
+          const { error } = await supabase.from('photos').delete().eq('id', photo.id);
+          if (error) throw error;
+          
+          // 3. Cancella file fisico
+          const fileName = photo.url.split('/').pop();
+          if (fileName) await supabase.storage.from('uploads').remove([fileName]);
+          
+          // 4. Aggiorna UI
+          setPhotos(photos.filter(p => p.id !== photo.id));
+          alert("Foto rimossa e utente notificato.");
+
       } catch (error: any) {
           alert("Errore eliminazione: " + error.message);
       }
   }
 
+  // --- ELIMINAZIONE UTENTE CON EMAIL SIMULATA ---
   async function deleteUser(user: User) {
-      if(!confirm(`ATTENZIONE: Eliminare l'utente ${user.username}?`)) return;
+      if(!confirm(`ATTENZIONE: Stai per eliminare l'utente ${user.username}. Procedere?`)) return;
+      
       try {
-          await supabase.from('profiles').delete().eq('id', user.id);
+          // 1. Simulazione invio Email
+          // In un'app reale qui useresti un servizio come Resend o SendGrid
+          alert(`📧 SISTEMA: Email di avviso inviata all'ID ${user.id}.\nOggetto: Cancellazione Account\nMessaggio: "Gentile utente, il tuo account è stato rimosso per violazione dei termini."`);
+
+          // 2. Cancella profilo dal DB
+          const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+          if (error) throw error;
+          
           setUsers(users.filter(u => u.id !== user.id));
-          alert("Utente rimosso.");
+          alert("Utente eliminato dal database.");
+
       } catch (error: any) {
           alert("Errore eliminazione utente: " + error.message);
       }
   }
 
   function logoutAdmin() {
-      sessionStorage.removeItem('is_super_admin'); // Rimuovi dalla sessione
+      sessionStorage.removeItem('is_super_admin');
       setIsAuthorized(false);
       setSecretInput("");
   }
 
-  // --- LOADING INIZIALE ---
+  // --- LOADING ---
   if (isChecking) return <div className="min-h-screen bg-stone-900 flex items-center justify-center text-white">Caricamento...</div>;
 
-  // --- VISTA 1: LOGIN (Se non autorizzato) ---
+  // --- VISTA 1: LOGIN ---
   if (!isAuthorized) return (
     <main className="min-h-screen bg-stone-900 text-white flex items-center justify-center p-4">
         <div className="w-full max-w-sm bg-stone-800 border border-red-900/50 p-8 rounded-2xl shadow-2xl text-center">
@@ -147,10 +172,15 @@ export default function AdminPage() {
     </main>
   );
 
-  // --- VISTA 2: PANNELLO (Se autorizzato) ---
+  // --- VISTA 2: PANNELLO ---
   return (
     <main className="min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white p-8 relative overflow-hidden">
-      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
+      
+      {/* Texture Sfondo */}
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
+      </div>
+
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-900/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       <div className="relative z-10 max-w-6xl mx-auto">
@@ -189,7 +219,10 @@ export default function AdminPage() {
                 <div className="space-y-2">
                     {users.map(user => (
                         <div key={user.id} className="flex justify-between items-center bg-stone-600/30 p-4 rounded-xl border border-stone-500/30 hover:bg-stone-600/50 transition">
-                            <div><p className="font-bold text-lg text-white">{user.username || "Senza Nome"}</p><p className="text-xs text-stone-300 font-mono">{user.id}</p></div>
+                            <div>
+                                <p className="font-bold text-lg text-white">{user.username || "Senza Nome"}</p>
+                                <p className="text-xs text-stone-300 font-mono">{user.id}</p>
+                            </div>
                             <button onClick={() => deleteUser(user)} className="bg-red-600/20 text-red-400 border border-red-600/50 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition">ELIMINA UTENTE</button>
                         </div>
                     ))}
