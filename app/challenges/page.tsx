@@ -27,7 +27,6 @@ function ChallengesContent() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
-  const [activeTab, setActiveTab] = useState<'current' | 'prizes'>('current');
 
   // Timer Countdown
   useEffect(() => {
@@ -38,13 +37,12 @@ function ChallengesContent() {
 
       if (diff <= 0) {
         setTimeLeft("Sfida terminata! Calcolo vincitori...");
-        // Qui scatterebbe la logica delle 24h di pausa
       } else {
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         setTimeLeft(`${days}g ${hours}h rimanenti`);
       }
-    }, 1000 * 60); // Aggiorna ogni minuto
+    }, 1000 * 60);
 
     // Init immediato
     const now = new Date();
@@ -66,7 +64,7 @@ function ChallengesContent() {
       
       <div className="flex w-full relative z-10 h-screen">
 
-        {/* --- SIDEBAR (Coerente con Upload) --- */}
+        {/* --- SIDEBAR --- */}
         <aside className={`fixed md:relative w-64 bg-stone-700/40 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 h-full transition-transform duration-300 z-50 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <h2 className="text-2xl font-bold text-white mb-10 tracking-tight">Photo Platform</h2>
             <button onClick={() => setIsMenuOpen(false)} className="absolute top-4 right-4 md:hidden text-stone-300 hover:text-white text-xl">✕</button>
@@ -113,121 +111,49 @@ function ChallengesContent() {
                </Link>
              </div>
 
-             {/* TABS SELEZIONE */}
-             <div className="flex justify-center mb-8 border-b border-stone-600/50">
-                <button 
-                  onClick={() => setActiveTab('current')} 
-                  className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'current' ? 'border-amber-400 text-white' : 'border-transparent text-stone-400 hover:text-stone-200'}`}
-                >
-                  Classifica Live
-                </button>
-                <button 
-                  onClick={() => setActiveTab('prizes')} 
-                  className={`px-6 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'prizes' ? 'border-amber-400 text-white' : 'border-transparent text-stone-400 hover:text-stone-200'}`}
-                >
-                  🏆 Cosa si vince
-                </button>
-             </div>
-
-             {activeTab === 'current' ? (
-               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                 {/* COLONNA SX: HALL OF FAME (Vincitore Mese Scorso) */}
-                 <div className="lg:col-span-1">
-                   <div className="bg-gradient-to-b from-stone-700/40 to-stone-800/40 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-6 relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 bg-amber-500 text-stone-900 text-xs font-bold px-3 py-1 rounded-bl-xl z-20">Vincitore {PAST_WINNER.month}</div>
-                     <div className="absolute -top-10 -left-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
-                     
-                     <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">👑 Hall of Fame</h3>
-                     
-                     <div className="aspect-[4/5] rounded-xl overflow-hidden mb-4 relative shadow-2xl">
-                       <img src={PAST_WINNER.image} alt="Winner" className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                       <div className="absolute bottom-4 left-4">
-                         <p className="text-white font-bold text-lg leading-tight">{PAST_WINNER.title}</p>
-                         <p className="text-amber-300 text-sm flex items-center gap-1">
-                           {PAST_WINNER.username} 
-                           <span title="Badge Vincitore" className="bg-amber-400 text-stone-900 text-[10px] px-1 rounded-full">{PAST_WINNER.badge}</span>
-                         </p>
-                       </div>
-                     </div>
-                     <p className="text-stone-300 text-xs italic text-center">"Una composizione magistrale che ha catturato l'essenza dell'autunno."</p>
-                   </div>
-                 </div>
-
-                 {/* COLONNA DX: GRID FOTO CORRENTI (Placeholder) */}
-                 <div className="lg:col-span-2">
-                   <h3 className="text-lg font-bold text-white mb-4">In Gara ({MOCK_CHALLENGE.participants} scatti)</h3>
-                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                     {/* Generazione fake di card per demo */}
-                     {[1,2,3,4,5,6].map((i) => (
-                       <div key={i} className="aspect-square bg-stone-700/50 rounded-xl border border-stone-600/50 overflow-hidden relative group cursor-pointer hover:border-stone-400 transition">
-                         <div className="absolute inset-0 flex items-center justify-center text-stone-500 text-xs">Foto {i}</div>
-                         <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60 translate-y-full group-hover:translate-y-0 transition">
-                            <p className="text-xs text-white">Fotografo {i}</p>
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                   <div className="mt-6 text-center">
-                     <button className="text-stone-400 text-sm hover:text-white underline">Vedi tutte le partecipazioni</button>
-                   </div>
-                 </div>
-               </div>
-             ) : (
-               /* --- SEZIONE PREMI (NUOVA) --- */
-               <div className="bg-stone-800/40 backdrop-blur-xl border border-stone-600/50 rounded-3xl p-8 md:p-12 animate-fadeIn">
-                 <h2 className="text-3xl font-bold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500">
-                   Perché Partecipare? Ecco i Premi!
-                 </h2>
-                 
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+               {/* COLONNA SX: HALL OF FAME (Vincitore Mese Scorso) */}
+               <div className="lg:col-span-1">
+                 <div className="bg-gradient-to-b from-stone-700/40 to-stone-800/40 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-6 relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 bg-amber-500 text-stone-900 text-xs font-bold px-3 py-1 rounded-bl-xl z-20">Vincitore {PAST_WINNER.month}</div>
+                   <div className="absolute -top-10 -left-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
                    
-                   {/* Premio 1 */}
-                   <div className="bg-stone-700/30 rounded-2xl p-6 text-center border border-stone-600 hover:border-amber-500/50 transition transform hover:-translate-y-2">
-                     <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-                       🎖️
+                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">👑 Hall of Fame</h3>
+                   
+                   <div className="aspect-[4/5] rounded-xl overflow-hidden mb-4 relative shadow-2xl">
+                     <img src={PAST_WINNER.image} alt="Winner" className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                     <div className="absolute bottom-4 left-4">
+                       <p className="text-white font-bold text-lg leading-tight">{PAST_WINNER.title}</p>
+                       <p className="text-amber-300 text-sm flex items-center gap-1">
+                         {PAST_WINNER.username} 
+                         <span title="Badge Vincitore" className="bg-amber-400 text-stone-900 text-[10px] px-1 rounded-full">{PAST_WINNER.badge}</span>
+                       </p>
                      </div>
-                     <h3 className="text-xl font-bold text-white mb-2">Badge "Vincitore"</h3>
-                     <p className="text-stone-300 text-sm">
-                       Un badge dorato permanente sul tuo profilo e accanto al tuo nome. Distinguiti nella community come un fotografo d'élite.
-                     </p>
                    </div>
-
-                   {/* Premio 2 */}
-                   <div className="bg-stone-700/30 rounded-2xl p-6 text-center border border-stone-600 hover:border-amber-500/50 transition transform hover:-translate-y-2">
-                     <div className="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-                       📰
-                     </div>
-                     <h3 className="text-xl font-bold text-white mb-2">Intervista sul Blog</h3>
-                     <p className="text-stone-300 text-sm">
-                       Un articolo dedicato interamente a te e al tuo scatto vincente nella sezione "Blog Storie". Racconta il tuo "dietro le quinte".
-                     </p>
-                   </div>
-
-                   {/* Premio 3 */}
-                   <div className="bg-stone-700/30 rounded-2xl p-6 text-center border border-stone-600 hover:border-amber-500/50 transition transform hover:-translate-y-2">
-                     <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-                       🏠
-                     </div>
-                     <h3 className="text-xl font-bold text-white mb-2">Hall of Fame in Home</h3>
-                     <p className="text-stone-300 text-sm">
-                       La tua foto sarà messa in evidenza nella Homepage e nella sezione "Esplora" per 24 ore come "Scatto del Mese".
-                     </p>
-                   </div>
-
-                 </div>
-
-                 <div className="mt-12 bg-amber-500/10 border border-amber-500/20 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                   <div className="text-left">
-                     <h4 className="text-amber-400 font-bold text-lg mb-1">Criteri di Giudizio</h4>
-                     <p className="text-stone-300 text-sm">Le foto vengono votate dalla community (50%) e da una giuria di esperti (50%). Originalità, tecnica e aderenza al tema sono fondamentali.</p>
-                   </div>
-                   <Link href={`/upload?category=${encodeURIComponent("Sfida del Mese")}`} className="px-6 py-3 bg-white text-stone-900 font-bold rounded-lg hover:bg-stone-200 transition whitespace-nowrap">
-                     Accetta la Sfida
-                   </Link>
+                   <p className="text-stone-300 text-xs italic text-center">"Una composizione magistrale che ha catturato l'essenza dell'autunno."</p>
                  </div>
                </div>
-             )}
+
+               {/* COLONNA DX: GRID FOTO CORRENTI (Placeholder) */}
+               <div className="lg:col-span-2">
+                 <h3 className="text-lg font-bold text-white mb-4">In Gara ({MOCK_CHALLENGE.participants} scatti)</h3>
+                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                   {/* Generazione fake di card per demo */}
+                   {[1,2,3,4,5,6].map((i) => (
+                     <div key={i} className="aspect-square bg-stone-700/50 rounded-xl border border-stone-600/50 overflow-hidden relative group cursor-pointer hover:border-stone-400 transition">
+                       <div className="absolute inset-0 flex items-center justify-center text-stone-500 text-xs">Foto {i}</div>
+                       <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60 translate-y-full group-hover:translate-y-0 transition">
+                          <p className="text-xs text-white">Fotografo {i}</p>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+                 <div className="mt-6 text-center">
+                   <button className="text-stone-400 text-sm hover:text-white underline">Vedi tutte le partecipazioni</button>
+                 </div>
+               </div>
+             </div>
 
            </div>
         </main>
