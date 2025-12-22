@@ -137,7 +137,7 @@ export default function ChallengesPage() {
               <div>
                 <h3 className="text-amber-300 font-bold text-lg">Premio: Badge Esclusivo "{CURRENT_CHALLENGE.prizeBadge}"</h3>
                 <p className="text-stone-300 text-sm mt-1 leading-snug">
-                  Il badge verrà assegnato <strong>automaticamente</strong> al vincitore allo scadere del timer, insieme alla visibilità in Home Page.
+                  Il badge verrà assegnato <strong>automaticamente</strong> al vincitore. Inoltre, il vincitore e la sua foto avranno uno spazio dedicato durante la sfida del mese successivo.
                 </p>
               </div>
             </div>
