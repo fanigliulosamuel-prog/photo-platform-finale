@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // <--- 1. IMPORT AGGIUNTO
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Playfair_Display } from 'next/font/google';
 import Link from 'next/link';
@@ -15,21 +15,24 @@ const CHALLENGES_CALENDAR = [
     title: "Luci nella Notte",
     description: "Cattura l'atmosfera della città quando il sole tramonta. Neon, lampioni, scie luminose.",
     category: "Sfida del Mese", // Categoria SPECIALE
-    status: "active"
+    status: "active",
+    prizeBadge: "✨ Maestro delle Luci" // Badge specifico
   },
   {
     month: 0, // Gennaio 2026
     title: "Il Calore del Freddo",
     description: "Racconta l'inverno attraverso i ritratti. Sciarpe, neve, espressioni che scaldano.",
     category: "Sfida del Mese",
-    status: "upcoming"
+    status: "upcoming",
+    prizeBadge: "❄️ Cuore d'Inverno"
   },
   {
     month: 1, // Febbraio 2026
     title: "Geometrie Urbane",
     description: "Linee, forme e prospettive dell'architettura moderna.",
     category: "Sfida del Mese",
-    status: "upcoming"
+    status: "upcoming",
+    prizeBadge: "📐 Architetto Visivo"
   }
 ];
 
@@ -46,7 +49,7 @@ type Photo = {
 }
 
 export default function ChallengesPage() {
-  const router = useRouter(); // <--- 2. INIZIALIZZAZIONE ROUTER
+  const router = useRouter();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -125,6 +128,20 @@ export default function ChallengesPage() {
           <h1 className={`${playfair.className} text-4xl md:text-7xl font-bold text-white mb-4 drop-shadow-xl`}>{CURRENT_CHALLENGE.title}</h1>
           <p className="text-lg text-stone-200 max-w-2xl mx-auto mb-8 leading-relaxed">{CURRENT_CHALLENGE.description}</p>
 
+          {/* --- RIQUADRO PREMIO / BADGE --- */}
+          <div className="inline-block bg-stone-800/40 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-5 mb-10 max-w-xl animate-fadeIn hover:border-amber-400/50 transition-colors">
+            <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+              <div className="bg-amber-500/20 p-4 rounded-full text-3xl shadow-[0_0_15px_rgba(245,158,11,0.3)]">🏆</div>
+              <div>
+                <h3 className="text-amber-300 font-bold text-lg">Premio: Badge Esclusivo "{CURRENT_CHALLENGE.prizeBadge}"</h3>
+                <p className="text-stone-300 text-sm mt-1 leading-snug">
+                  Il badge verrà assegnato <strong>automaticamente</strong> al vincitore allo scadere del timer, insieme alla visibilità in Home Page.
+                </p>
+              </div>
+            </div>
+          </div>
+          {/* ------------------------------- */}
+
           {!isEnded ? (
             <>
                 <div className="flex justify-center gap-3 md:gap-6 mb-10">
@@ -133,7 +150,7 @@ export default function ChallengesPage() {
                     return (<div key={label} className="text-center"><div className="w-14 h-14 md:w-20 md:h-20 bg-stone-800/50 backdrop-blur-md rounded-xl border border-stone-500/30 flex items-center justify-center text-xl md:text-3xl font-bold text-white shadow-inner">{values[i]}</div><p className="text-[10px] text-stone-400 uppercase mt-2 font-bold tracking-wider">{label}</p></div>);
                 })}
                 </div>
-                {/* LINK CORRETTO: Passa 'Sfida del Mese' */}
+                
                 <Link href={`/upload?category=${encodeURIComponent(CURRENT_CHALLENGE.category)}`}>
                   <button className="px-8 py-3 md:px-12 md:py-4 bg-white text-stone-900 text-lg font-bold rounded-full hover:scale-105 transition transform shadow-xl hover:shadow-amber-500/20">Partecipa Ora 📸</button>
                 </Link>
@@ -144,7 +161,7 @@ export default function ChallengesPage() {
           )}
         </div>
 
-        {/* --- CALENDARIO SFIDE (NUOVO) --- */}
+        {/* --- CALENDARIO SFIDE --- */}
         <div className="max-w-5xl mx-auto mb-16">
             <h2 className="text-2xl font-bold mb-6 text-stone-100 text-center">📅 Prossime Sfide</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
