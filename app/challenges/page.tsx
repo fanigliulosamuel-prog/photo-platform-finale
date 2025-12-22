@@ -105,7 +105,8 @@ export default function ChallengesPage() {
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
-            <Link href="/challenges" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>🏆 Sfide</Link>
+            {/* Aggiornato il testo del link */}
+            <Link href="/challenges" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>🏆 Sfida del Mese</Link>
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
             <Link href="/upload" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📤 Carica Foto</Link>
@@ -121,7 +122,8 @@ export default function ChallengesPage() {
       {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
       <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative z-10">
-        <div className="flex items-center mb-8 md:hidden"><button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">☰</button><h1 className={`${playfair.className} text-2xl font-bold text-white`}>Sfide</h1></div>
+        {/* Aggiornato titolo mobile */}
+        <div className="flex items-center mb-8 md:hidden"><button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">☰</button><h1 className={`${playfair.className} text-2xl font-bold text-white`}>Sfida del Mese</h1></div>
 
         <div className="relative z-10 p-8 md:p-12 text-center max-w-5xl mx-auto bg-stone-400/10 rounded-3xl border border-stone-400/20 backdrop-blur-xl shadow-2xl mb-12">
           <span className="inline-block py-1 px-3 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest mb-6 border border-amber-500/30 animate-pulse">● Sfida Attiva</span>
