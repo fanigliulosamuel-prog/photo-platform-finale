@@ -8,28 +8,19 @@ import Link from 'next/link';
 // Dati Mock per simulare lo stato della sfida
 const MOCK_CHALLENGE = {
   theme: "Luci e Ombre",
-  description: "Cattura il contrasto drammatico tra luce e oscurità. Gioca con le silhouette e i tagli di luce.",
+  description: "Cattura il contrasto drammatico tra luce e oscurità. Gioca con le silhouette e i tagli di luce per creare composizioni emotive e potenti.",
   endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), // Fine mese corrente
   status: "active",
   participants: 142,
   daysLeft: 12,
-  // Badge specifico per questa sfida
   prizeBadge: "🌓 Maestro di Luci" 
-};
-
-// Esempio di vincitore con badge tematico della sfida precedente
-const PAST_WINNER = {
-  username: "MarcoRossi_Ph",
-  image: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-  title: "Riflessi Urbani",
-  month: "Novembre",
-  badge: "🏙️ Urban Master" // Badge attinente alla sfida precedente
 };
 
 function ChallengesContent() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Timer Countdown
   useEffect(() => {
@@ -39,7 +30,7 @@ function ChallengesContent() {
       const diff = end.getTime() - now.getTime();
 
       if (diff <= 0) {
-        setTimeLeft("Sfida terminata! Calcolo vincitori...");
+        setTimeLeft("Sfida terminata!");
       } else {
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -57,6 +48,28 @@ function ChallengesContent() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Funzione semplice per generare i giorni del calendario (mese corrente)
+  const generateCalendarDays = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1).getDay(); // 0 = Domenica
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Aggiustamento per far partire la settimana da Lunedì (opzionale, qui standard Domenica-Sabato per semplicità o Lun-Dom)
+    // Facciamo standard Lunedì = 0 per array visuale
+    const startingBlankDays = firstDay === 0 ? 6 : firstDay - 1; 
+
+    const days = [];
+    for (let i = 0; i < startingBlankDays; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    return days;
+  };
+
+  const calendarDays = generateCalendarDays();
+  const today = new Date().getDate();
+  const lastDay = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
@@ -87,92 +100,91 @@ function ChallengesContent() {
         {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
         {/* --- MAIN CONTENT --- */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative z-10">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative z-10 flex flex-col items-center justify-center">
            <div className="absolute top-4 left-4 md:hidden z-20"><button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl">☰</button></div>
 
-           <div className="max-w-5xl mx-auto">
+           <div className="max-w-4xl mx-auto w-full text-center">
              
              {/* HEADER SFIDA */}
-             <div className="mb-12 text-center relative">
-               <span className="inline-block py-1 px-3 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold tracking-wider uppercase mb-3 border border-amber-500/30">Sfida del Mese</span>
-               <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">{MOCK_CHALLENGE.theme}</h1>
-               <p className="text-xl text-stone-200 max-w-2xl mx-auto font-light leading-relaxed mb-6">{MOCK_CHALLENGE.description}</p>
+             <div className="mb-4">
+               <span className="inline-block py-1 px-3 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold tracking-wider uppercase mb-6 border border-amber-500/30">Sfida del Mese</span>
+               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-lg">{MOCK_CHALLENGE.theme}</h1>
+               <p className="text-xl md:text-2xl text-stone-200 max-w-2xl mx-auto font-light leading-relaxed mb-8">{MOCK_CHALLENGE.description}</p>
                
-               {/* --- RIQUADRO PREMI (AGGIUNTO) --- */}
-               <div className="inline-block bg-stone-800/60 backdrop-blur-md border border-amber-500/30 rounded-2xl p-5 max-w-2xl shadow-xl shadow-amber-900/10 transform hover:scale-[1.01] transition-transform">
-                  <div className="flex flex-col md:flex-row items-center gap-3 text-center md:text-left">
-                    <div className="bg-amber-500/20 p-3 rounded-full text-2xl">🏆</div>
-                    <div>
-                      <h3 className="text-amber-300 font-bold text-lg">In Palio: Badge Esclusivo "{MOCK_CHALLENGE.prizeBadge}"</h3>
-                      <p className="text-stone-300 text-sm mt-1">
-                        + Visibilità garantita in Home Page per 24h. <span className="text-stone-400 italic text-xs block md:inline mt-1 md:mt-0">(Il badge viene assegnato automaticamente al vincitore a fine sfida)</span>
-                      </p>
-                    </div>
+               {/* --- RIQUADRO PREMI --- */}
+               <div className="inline-block bg-stone-800/60 backdrop-blur-md border border-amber-500/30 rounded-2xl p-6 shadow-xl shadow-amber-900/10 transform hover:scale-[1.01] transition-transform mb-8">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="bg-amber-500/20 p-4 rounded-full text-3xl mb-3">🏆</div>
+                    <h3 className="text-amber-300 font-bold text-xl">In Palio: Badge Esclusivo "{MOCK_CHALLENGE.prizeBadge}"</h3>
+                    <p className="text-stone-300 text-base mt-2 max-w-lg">
+                      Oltre alla visibilità in Home Page per 24h. <br/>
+                      <span className="text-stone-400 italic text-sm mt-1 block">(Il badge viene assegnato automaticamente al vincitore al termine della sfida)</span>
+                    </p>
                   </div>
                </div>
-               {/* ---------------------------------- */}
-
-               <div className="mt-8 flex justify-center gap-4">
-                 <div className="bg-stone-800/50 backdrop-blur-md border border-stone-600 rounded-xl px-6 py-3 flex flex-col items-center">
-                   <span className="text-xs text-stone-400 uppercase">Tempo Rimasto</span>
-                   <span className="text-xl font-mono font-bold text-amber-400">{timeLeft}</span>
+               
+               {/* --- STATS BAR --- */}
+               <div className="flex justify-center gap-6 mb-8">
+                 <div className="flex flex-col items-center">
+                   <span className="text-xs text-stone-400 uppercase tracking-widest mb-1">Tempo Rimasto</span>
+                   <span className="text-2xl font-mono font-bold text-amber-400">{timeLeft}</span>
                  </div>
-                 <div className="bg-stone-800/50 backdrop-blur-md border border-stone-600 rounded-xl px-6 py-3 flex flex-col items-center">
-                   <span className="text-xs text-stone-400 uppercase">Partecipanti</span>
-                   <span className="text-xl font-mono font-bold text-white">{MOCK_CHALLENGE.participants}</span>
-                 </div>
-               </div>
-
-               <Link href={`/upload?category=${encodeURIComponent("Sfida del Mese")}`} className="mt-8 inline-flex items-center gap-2 px-8 py-4 bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold rounded-full transition-transform hover:scale-105 shadow-xl shadow-amber-500/20">
-                 📸 Partecipa Ora
-               </Link>
-             </div>
-
-             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-               {/* COLONNA SX: HALL OF FAME (Vincitore Mese Scorso) */}
-               <div className="lg:col-span-1">
-                 <div className="bg-gradient-to-b from-stone-700/40 to-stone-800/40 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-6 relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 bg-amber-500 text-stone-900 text-xs font-bold px-3 py-1 rounded-bl-xl z-20">Vincitore {PAST_WINNER.month}</div>
-                   <div className="absolute -top-10 -left-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
-                   
-                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">👑 Hall of Fame</h3>
-                   
-                   <div className="aspect-[4/5] rounded-xl overflow-hidden mb-4 relative shadow-2xl">
-                     <img src={PAST_WINNER.image} alt="Winner" className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" />
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                     <div className="absolute bottom-4 left-4">
-                       <p className="text-white font-bold text-lg leading-tight">{PAST_WINNER.title}</p>
-                       <div className="flex flex-col gap-1 mt-1">
-                          <p className="text-amber-300 text-sm font-medium">{PAST_WINNER.username}</p>
-                          {/* Badge Tematico Visualizzato */}
-                          <span title="Badge Vincitore Sfida Precedente" className="inline-block bg-amber-500/80 text-stone-900 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit">
-                            {PAST_WINNER.badge}
-                          </span>
-                       </div>
-                     </div>
-                   </div>
-                   <p className="text-stone-300 text-xs italic text-center">"Una composizione magistrale che ha catturato l'essenza dell'autunno."</p>
+                 <div className="w-px bg-stone-600/50 h-12"></div>
+                 <div className="flex flex-col items-center">
+                   <span className="text-xs text-stone-400 uppercase tracking-widest mb-1">Partecipanti</span>
+                   <span className="text-2xl font-mono font-bold text-white">{MOCK_CHALLENGE.participants}</span>
                  </div>
                </div>
 
-               {/* COLONNA DX: GRID FOTO CORRENTI (Placeholder) */}
-               <div className="lg:col-span-2">
-                 <h3 className="text-lg font-bold text-white mb-4">In Gara ({MOCK_CHALLENGE.participants} scatti)</h3>
-                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                   {/* Generazione fake di card per demo */}
-                   {[1,2,3,4,5,6].map((i) => (
-                     <div key={i} className="aspect-square bg-stone-700/50 rounded-xl border border-stone-600/50 overflow-hidden relative group cursor-pointer hover:border-stone-400 transition">
-                       <div className="absolute inset-0 flex items-center justify-center text-stone-500 text-xs">Foto {i}</div>
-                       <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60 translate-y-full group-hover:translate-y-0 transition">
-                          <p className="text-xs text-white">Fotografo {i}</p>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-                 <div className="mt-6 text-center">
-                   <button className="text-stone-400 text-sm hover:text-white underline">Vedi tutte le partecipazioni</button>
-                 </div>
+               {/* --- ACTION BUTTONS --- */}
+               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Link href={`/upload?category=${encodeURIComponent("Sfida del Mese")}`} className="inline-flex items-center gap-3 px-10 py-4 bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold text-lg rounded-full transition-all hover:scale-105 shadow-2xl shadow-amber-500/30">
+                    📸 Carica la tua Foto
+                  </Link>
+                  <button 
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-stone-700/50 hover:bg-stone-600/50 border border-stone-500/30 text-stone-200 font-bold text-lg rounded-full transition-all"
+                  >
+                    📅 {showCalendar ? "Nascondi Calendario" : "Vedi Calendario"}
+                  </button>
                </div>
+
+               {/* --- CALENDARIO (TOGGLE) --- */}
+               {showCalendar && (
+                 <div className="mt-8 bg-stone-800/80 backdrop-blur-xl border border-stone-600/50 rounded-2xl p-6 max-w-md mx-auto animate-fadeIn shadow-2xl">
+                    <h3 className="text-white font-bold mb-4 uppercase tracking-wider text-sm border-b border-stone-600/50 pb-2 flex justify-between">
+                      <span>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                      <span className="text-stone-400 text-xs">Scadenze</span>
+                    </h3>
+                    <div className="grid grid-cols-7 gap-2 text-center text-sm mb-2 text-stone-400 font-bold">
+                      <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
+                    </div>
+                    <div className="grid grid-cols-7 gap-2 text-center">
+                      {calendarDays.map((day, idx) => {
+                        const isToday = day === today;
+                        const isDeadline = day === lastDay;
+                        // Simuliamo che il 1° del mese dopo (o fine mese) sia importante. Qui visualizziamo mese corrente.
+                        
+                        return (
+                          <div key={idx} className={`aspect-square flex items-center justify-center rounded-lg text-sm relative
+                            ${day === null ? 'invisible' : ''}
+                            ${isToday ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold' : 'text-stone-300 hover:bg-stone-700/50'}
+                            ${isDeadline ? 'bg-red-500/20 text-red-300 border border-red-500/50 font-bold' : ''}
+                          `}>
+                            {day}
+                            {isToday && <span className="absolute -bottom-1 w-1 h-1 bg-amber-500 rounded-full"></span>}
+                            {isDeadline && <span className="absolute top-0 right-0 -mt-1 -mr-1 text-[10px]">🏁</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 flex justify-center gap-4 text-xs text-stone-400">
+                      <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Oggi</div>
+                      <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> Fine Sfida</div>
+                    </div>
+                 </div>
+               )}
+
              </div>
 
            </div>
