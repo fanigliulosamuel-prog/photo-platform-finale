@@ -23,52 +23,62 @@ export default function Home() {
       </div>
 
       {/* --- CONTENUTO --- */}
-      <div className="relative z-10 flex flex-col items-center animate-pulse-slow">
+      <div className="relative z-10 flex flex-col items-center animate-pulse-slow w-full max-w-4xl mx-auto">
         
-        <h1 className={`${playfair.className} text-6xl md:text-9xl font-bold text-white mb-4 drop-shadow-2xl tracking-tight`}>
+        <h1 className={`${playfair.className} text-6xl md:text-9xl font-bold text-white mb-6 drop-shadow-2xl tracking-tight leading-tight`}>
           Photo Platform
         </h1>
         
-        <p className="text-xl md:text-2xl text-gray-200 max-w-2xl mb-12 font-light tracking-wide shadow-black drop-shadow-md">
+        <p className="text-xl md:text-2xl text-gray-200 max-w-2xl mb-16 font-light tracking-wide shadow-black drop-shadow-md leading-relaxed">
           Cattura l'attimo. Condividi la visione. Ispira il mondo.
         </p>
 
         {/* Pulsanti */}
-        <div className="flex flex-col md:flex-row gap-6 mb-16"> {/* Aggiunto margin-bottom per separare dal footer */}
+        <div className="flex flex-col md:flex-row gap-6 w-full justify-center px-4">
           
-          {/* Bottone 1: Registrazione/Inizio */}
-          <Link href="/login">
-            <button className="px-10 py-4 bg-white text-black text-lg font-bold rounded-full hover:scale-105 transition transform duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-              Inizia a Creare
-            </button>
+          {/* Bottone 1: Registrazione/Inizio - LINK DIRETTO SENZA BUTTON */}
+          <Link 
+            href="/login"
+            className="w-full md:w-auto px-10 py-4 bg-white text-black text-lg font-bold rounded-full hover:scale-105 transition transform duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center justify-center"
+          >
+            Inizia a Creare
           </Link>
           
-          {/* Bottone 2: Galleria */}
-          <Link href="/explore">
-            <button className="px-10 py-4 backdrop-blur-md bg-white/10 border border-white/30 text-white text-lg font-bold rounded-full hover:bg-white/20 transition duration-300">
-              Esplora Gallery
-            </button>
+          {/* Bottone 2: Galleria - LINK DIRETTO SENZA BUTTON */}
+          <Link 
+            href="/explore"
+            className="w-full md:w-auto px-10 py-4 backdrop-blur-md bg-white/10 border border-white/30 text-white text-lg font-bold rounded-full hover:bg-white/20 transition duration-300 flex items-center justify-center"
+          >
+            Esplora Gallery
           </Link>
           
-        </div>
-
-        {/* --- FOOTER SVILUPPATO DA TPC --- */}
-        {/* Modificato da bottom-8 a bottom-2 per spostarlo molto più in basso */}
-        <div className="absolute bottom-2 flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity duration-500">
-            <p className={`${inter.className} text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-2`}>Sviluppato da</p>
-            <div className="flex items-center gap-3 border border-white/20 bg-black/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                {/* Logo Quadrato TPC */}
-                <div className="w-8 h-8 border border-white flex items-center justify-center bg-transparent">
-                    <span className="text-white font-bold text-[10px]">TPC</span>
-                </div>
-                {/* Testo Esteso */}
-                <span className={`${playfair.className} text-white text-sm font-medium tracking-wider`}>
-                    Two Photographers of Code
-                </span>
-            </div>
         </div>
 
       </div>
+
+      {/* --- FOOTER SVILUPPATO DA TPC (POSIZIONATO IN BASSO) --- */}
+      <div className="absolute bottom-8 w-full flex flex-col items-center justify-center opacity-80 hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-none">
+          <p className={`${inter.className} text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-3 font-semibold`}>Sviluppato da</p>
+          
+          {/* Box Logo + Nome */}
+          <div className="flex items-center gap-4 bg-black/40 backdrop-blur-md border border-white/10 px-5 py-3 rounded-xl shadow-2xl">
+              {/* Logo Quadrato TPC Minimal */}
+              <div className="w-10 h-10 border-2 border-white flex items-center justify-center bg-transparent shrink-0">
+                  <span className={`${inter.className} text-white font-black text-xs tracking-tighter`}>TPC</span>
+              </div>
+              
+              {/* Testo Esteso con Separatore */}
+              <div className="flex flex-col text-left">
+                  <span className={`${playfair.className} text-white text-lg font-medium leading-none mb-1`}>
+                      Two Photographers
+                  </span>
+                  <span className={`${inter.className} text-amber-500 text-[10px] font-bold uppercase tracking-widest`}>
+                      of Code
+                  </span>
+              </div>
+          </div>
+      </div>
+
     </main>
   );
 }
