@@ -149,10 +149,10 @@ function UploadContent() {
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      <div className="flex w-full relative z-10 h-screen flex-col md:flex-row">
+      <div className="flex w-full relative z-10 min-h-screen flex-col md:flex-row">
 
         {/* --- SIDEBAR --- */}
-        <aside className={`fixed md:relative w-64 bg-stone-700/40 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 h-full transition-transform duration-300 z-50 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        <aside className={`fixed md:relative w-64 bg-stone-700/40 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 h-screen transition-transform duration-300 z-50 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <h2 className="text-2xl font-bold text-white mb-10 tracking-tight">Photo Platform</h2>
             <button onClick={() => setIsMenuOpen(false)} className="absolute top-4 right-4 md:hidden text-stone-300 hover:text-white text-xl">✕</button>
             <nav className="flex flex-col gap-3 overflow-y-auto flex-1">
@@ -177,12 +177,14 @@ function UploadContent() {
         
         {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
-        {/* --- AREA PRINCIPALE --- */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative z-10 flex flex-col items-center justify-center">
+        {/* --- AREA PRINCIPALE (Modificata per scroll) --- */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative z-10 flex flex-col items-center py-12">
             
-            <div className="absolute top-4 left-4 md:hidden z-20"><button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl">☰</button></div>
+            <div className="absolute top-4 left-4 md:hidden z-20">
+                <button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl">☰</button>
+            </div>
 
-            <div className="relative z-10 w-full max-w-2xl bg-stone-400/40 backdrop-blur-xl border border-stone-300/50 p-6 md:p-8 rounded-3xl shadow-2xl mt-16 md:mt-0 mb-8 overflow-hidden">
+            <div className="relative z-10 w-full max-w-2xl bg-stone-400/40 backdrop-blur-xl border border-stone-300/50 p-6 md:p-8 rounded-3xl shadow-2xl mt-8 md:mt-0 mb-8">
                 <div className="flex justify-center items-center mb-4 text-center px-2">
                     <h1 className="text-2xl md:text-4xl font-bold text-white drop-shadow-md break-words leading-tight">
                         Carica il tuo Scatto
@@ -191,7 +193,6 @@ function UploadContent() {
                 <p className="text-stone-100 mb-8 text-sm text-center">Mostra il tuo talento alla community.</p>
 
                 <form onSubmit={handleUpload} className="space-y-6">
-                    {/* --- GRID DEI CAMPI PRINCIPALI (FIXED) --- */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-stone-200 uppercase tracking-wider mb-2">Titolo Opera</label>
@@ -210,9 +211,8 @@ function UploadContent() {
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-200">▼</div>
                             </div>
                         </div>
-                    </div> {/* Chiusura div grid mancante individuata qui! */}
+                    </div>
 
-                    {/* --- DATI TECNICI --- */}
                     <div className="pt-4 border-t border-stone-400/30">
                         <h3 className="text-sm font-bold text-amber-200 uppercase tracking-wider mb-4">Dati Tecnici (EXIF)</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
