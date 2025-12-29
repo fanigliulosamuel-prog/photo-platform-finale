@@ -1,8 +1,9 @@
-import { Playfair_Display } from 'next/font/google';
+import { Playfair_Display, Inter } from 'next/font/google'; // Aggiunto Inter
 import Link from 'next/link';
 
-// Carichiamo il font elegante
+// Carichiamo i font
 const playfair = Playfair_Display({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'] }); // Font moderno per i dettagli tecnici/team
 
 export default function Home() {
   return (
@@ -33,7 +34,7 @@ export default function Home() {
         </p>
 
         {/* Pulsanti */}
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6 mb-16"> {/* Aggiunto margin-bottom per separare dal footer */}
           
           {/* Bottone 1: Registrazione/Inizio */}
           <Link href="/login">
@@ -49,6 +50,21 @@ export default function Home() {
             </button>
           </Link>
           
+        </div>
+
+        {/* --- FOOTER SVILUPPATO DA TPC --- */}
+        <div className="absolute bottom-8 flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity duration-500">
+            <p className={`${inter.className} text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-2`}>Sviluppato da</p>
+            <div className="flex items-center gap-3 border border-white/20 bg-black/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                {/* Logo Quadrato TPC */}
+                <div className="w-8 h-8 border border-white flex items-center justify-center bg-transparent">
+                    <span className="text-white font-bold text-[10px]">TPC</span>
+                </div>
+                {/* Testo Esteso */}
+                <span className={`${playfair.className} text-white text-sm font-medium tracking-wider`}>
+                    Two Photographers of Code
+                </span>
+            </div>
         </div>
 
       </div>
