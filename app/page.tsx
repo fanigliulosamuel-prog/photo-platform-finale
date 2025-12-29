@@ -53,7 +53,8 @@ export default function Home() {
         </div>
 
         {/* --- FOOTER SVILUPPATO DA TPC --- */}
-        <div className="absolute bottom-8 flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity duration-500">
+        {/* Modificato da bottom-8 a bottom-2 per spostarlo molto più in basso */}
+        <div className="absolute bottom-2 flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity duration-500">
             <p className={`${inter.className} text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-2`}>Sviluppato da</p>
             <div className="flex items-center gap-3 border border-white/20 bg-black/20 backdrop-blur-sm px-4 py-2 rounded-lg">
                 {/* Logo Quadrato TPC */}
