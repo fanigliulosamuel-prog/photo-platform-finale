@@ -25,14 +25,6 @@ const CHALLENGES_CALENDAR = [
     category: "Sfida del Mese",
     status: "active", 
     prizeBadge: "❄️ Cuore d'Inverno"
-  },
-  {
-    month: 1, // Febbraio 2026 (Futura)
-    title: "Geometrie Urbane",
-    description: "Linee, forme e prospettive dell'architettura moderna.",
-    category: "Sfida del Mese",
-    status: "upcoming",
-    prizeBadge: "📐 Architetto Visivo"
   }
 ];
 
@@ -52,13 +44,18 @@ type Photo = {
 
 export default function ChallengesPage() {
   const router = useRouter();
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  
+  // STATI DATI
+  const [decemberWinner, setDecemberWinner] = useState<Photo | null>(null); // Vincitore Dicembre
+  const [januaryPhotos, setJanuaryPhotos] = useState<Photo[]>([]);          // Foto Gennaio
+  
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-  // La sfida attiva è quella di Gennaio (Indice 1 nell'array)
+  // Dati Sfida Attiva (Gennaio) e Passata (Dicembre)
   const activeChallengeData = CHALLENGES_CALENDAR[1];
+  const pastChallengeData = CHALLENGES_CALENDAR[0];
 
   // --- TIMER COUNTDOWN ---
   useEffect(() => {
@@ -67,7 +64,6 @@ export default function ChallengesPage() {
       const distance = CURRENT_DEADLINE.getTime() - now;
       
       if (distance < 0) {
-        // Sfida finita
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       } else {
         setTimeLeft({
@@ -78,45 +74,60 @@ export default function ChallengesPage() {
         });
       }
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // --- FETCH FOTO (SOLO GENNAIO) ---
+  // --- DATA FETCHING (Doppia Query) ---
   useEffect(() => {
-    async function fetchJanuaryPhotos() {
+    async function fetchData() {
       try {
-        // Definiamo i limiti temporali per Gennaio 2026
+        setLoading(true);
+
+        // 1. CERCA IL VINCITORE DI DICEMBRE (Dal 1 Dic al 31 Dic 2025)
+        const startOfDec = new Date("2025-12-01T00:00:00").toISOString();
+        const endOfDec = new Date("2025-12-31T23:59:59").toISOString();
+
+        const { data: decData } = await supabase
+            .from('photos')
+            .select('*')
+            .eq('category', 'Sfida del Mese')
+            .gte('created_at', startOfDec)
+            .lte('created_at', endOfDec)
+            .order('likes', { ascending: false })
+            .limit(1) // Prendi solo il primo
+            .maybeSingle();
+        
+        if (decData) setDecemberWinner(decData);
+
+        // 2. CERCA LE FOTO DI GENNAIO (Dal 1 Gen al 31 Gen 2026)
         const startOfJan = new Date("2026-01-01T00:00:00").toISOString();
         const endOfJan = new Date("2026-01-31T23:59:59").toISOString();
 
-        const { data, error } = await supabase
+        const { data: janData } = await supabase
           .from('photos')
           .select('*')
           .eq('category', 'Sfida del Mese')
-          // --- FILTRO CRUCIALE: Solo foto create a Gennaio ---
           .gte('created_at', startOfJan) 
           .lte('created_at', endOfJan)
-          // --------------------------------------------------
           .order('likes', { ascending: false });
 
-        if (error) throw error;
-        setPhotos(data || []);
+        setJanuaryPhotos(janData || []);
+
       } catch (err) {
-        console.error("Errore caricamento classifica:", err);
+        console.error("Errore caricamento dati:", err);
       } finally {
         setLoading(false);
       }
     }
-    fetchJanuaryPhotos();
+    fetchData();
   }, []);
 
-  // Stili per le medaglie
+  // Helper Stili Medaglie
   const getRankStyle = (index: number) => {
     switch (index) {
-      case 0: return "border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.5)] md:-translate-y-4 z-10 scale-105"; // Oro
-      case 1: return "border-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.4)] z-0"; // Argento
-      case 2: return "border-orange-700 shadow-[0_0_20px_rgba(194,65,12,0.4)] z-0"; // Bronzo
+      case 0: return "border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.5)] md:-translate-y-4 z-10 scale-105"; 
+      case 1: return "border-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.4)] z-0"; 
+      case 2: return "border-orange-700 shadow-[0_0_20px_rgba(194,65,12,0.4)] z-0"; 
       default: return "border-stone-700";
     }
   };
@@ -135,17 +146,8 @@ export default function ChallengesPage() {
             <Link href="/dashboard" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🏠 Dashboard</Link>
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
-            <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
-            {/* Link Attivo */}
             <Link href="/challenges" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>🏆 Sfide</Link>
-            <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
-            <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
             <Link href="/upload" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📤 Carica Foto</Link>
-            <Link href="/contracts" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📄 Genera Contratti</Link>
-            <Link href="/private" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🔒 Area Clienti</Link>
-            <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Account</p>
-            <Link href="/notifications" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🔔 Notifiche</Link>
-            <Link href="/settings" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>⚙️ Impostazioni</Link>
           </nav>
           <div className="mt-auto pt-6 border-t border-stone-500/30"><button onClick={() => supabase.auth.signOut().then(() => router.push('/'))} className="text-stone-400 hover:text-stone-100 text-sm flex items-center gap-2 px-3 py-2 hover:bg-white/5 rounded-lg transition w-full text-left">🚪 Esci</button></div>
       </aside>
@@ -156,8 +158,31 @@ export default function ChallengesPage() {
         <div className="flex items-center mb-8 md:hidden"><button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">☰</button><h1 className={`${playfair.className} text-2xl font-bold text-white`}>Sfide</h1></div>
 
         <div className="relative z-10 p-8 md:p-12 text-center max-w-5xl mx-auto bg-stone-400/10 rounded-3xl border border-stone-400/20 backdrop-blur-xl shadow-2xl mb-12">
-          
-          {/* HEADER SFIDA ATTIVA */}
+            
+            {/* --- SEZIONE VINCITORE DICEMBRE (REINSERITA) --- */}
+            {decemberWinner && (
+                <div className="mb-16 animate-fade-in-down">
+                     <div className="bg-gradient-to-r from-amber-500/20 to-purple-500/20 border border-amber-500/50 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                        <div className="w-full md:w-1/3 aspect-square rounded-xl overflow-hidden border-2 border-amber-400 relative group">
+                            <img src={decemberWinner.url} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
+                            <div className="absolute top-2 right-2 bg-amber-500 text-black font-bold px-3 py-1 rounded-full text-xs shadow-lg">🥇 Vincitore Dicembre</div>
+                        </div>
+                        <div className="text-left flex-1">
+                            <h3 className="text-amber-400 font-bold text-lg mb-1 uppercase tracking-wider">Hall of Fame</h3>
+                            <h2 className={`${playfair.className} text-3xl md:text-4xl font-bold text-white mb-2`}>{decemberWinner.title}</h2>
+                            <p className="text-stone-300 mb-4">by <span className="text-white font-bold">{decemberWinner.author_name}</span></p>
+                            <div className="inline-flex items-center gap-2 bg-amber-500 text-black px-4 py-2 rounded-full font-bold text-sm">
+                                <span>{pastChallengeData.prizeBadge}</span>
+                                <span>Assegnato ✅</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-px w-full bg-stone-600/50 mb-10"></div>
+                </div>
+            )}
+            {/* ------------------------------------------------ */}
+
+            {/* HEADER SFIDA ATTIVA (GENNAIO) */}
             <span className="inline-block py-1 px-3 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest mb-6 border border-amber-500/30 animate-pulse">● Sfida di Gennaio Attiva</span>
             <h1 className={`${playfair.className} text-4xl md:text-7xl font-bold text-white mb-4 drop-shadow-xl`}>{activeChallengeData.title}</h1>
             <p className="text-lg text-stone-200 max-w-2xl mx-auto mb-8 leading-relaxed">{activeChallengeData.description}</p>
@@ -186,7 +211,6 @@ export default function ChallengesPage() {
             <Link href={`/upload?category=${encodeURIComponent("Sfida del Mese")}`}>
             <button className="px-8 py-3 md:px-12 md:py-4 bg-white text-stone-900 text-lg font-bold rounded-full hover:scale-105 transition transform shadow-xl hover:shadow-amber-500/20">Partecipa Ora 📸</button>
             </Link>
-            <p className="text-stone-400 text-xs mt-4">La categoria verrà impostata automaticamente su <strong>"Sfida del Mese"</strong>.</p>
         </div>
 
         {/* --- CLASSIFICA GENNAIO --- */}
@@ -196,10 +220,10 @@ export default function ChallengesPage() {
             </h2>
             
             {loading ? (
-                <p className="text-center text-stone-400 animate-pulse py-10">Caricamento classifica in corso...</p>
+                <p className="text-center text-stone-400 animate-pulse py-10">Caricamento classifiche...</p>
             ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end px-4">
-                {photos.map((photo, index) => (
+                {januaryPhotos.map((photo, index) => (
                 <Link href={`/photo/${photo.id}`} key={photo.id} className={`group relative block break-inside-avoid rounded-2xl transition-all duration-300 ${index === 0 ? 'order-first md:order-2' : index === 1 ? 'order-2 md:order-1' : 'order-3'}`}>
                     
                     {/* MEDAGLIE */}
@@ -210,7 +234,6 @@ export default function ChallengesPage() {
                     <div className={`aspect-[4/5] bg-stone-900 rounded-2xl overflow-hidden cursor-pointer border-2 transition duration-500 shadow-xl ${getRankStyle(index)}`}>
                         <img src={photo.url} alt={photo.title} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
                         
-                        {/* Overlay info */}
                         <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-transparent to-transparent flex flex-col justify-end p-6">
                             <p className="font-bold text-lg text-white mb-1 line-clamp-1">{photo.title}</p>
                             <div className="flex justify-between items-center">
@@ -224,7 +247,7 @@ export default function ChallengesPage() {
                 </Link>
                 ))}
                 
-                {photos.length === 0 && (
+                {januaryPhotos.length === 0 && (
                     <div className="col-span-full text-center py-20 bg-stone-400/5 rounded-3xl border border-dashed border-stone-500/30">
                         <p className="text-2xl mb-2">🧊</p>
                         <p className="text-stone-300 text-lg">Nessuna foto caricata a Gennaio.</p>
