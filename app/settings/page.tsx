@@ -136,11 +136,11 @@ export default function SettingsPage() {
   async function deleteAccount() {
     try {
         setLoading(true);
-        // 1. Elimina dati profilo (se non c'è cascade nel DB)
+        // 1. Elimina dati profilo
         const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
         if (profileError) throw profileError;
 
-        // 2. Logout e redirect (Nota: la cancellazione completa dall'Auth di Supabase richiede solitamente una Admin Function o RPC)
+        // 2. Logout e redirect
         await supabase.auth.signOut();
         router.push('/'); 
     } catch (error: any) {
@@ -285,20 +285,17 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {/* --- SEZIONE 3: ZONA PERICOLO (NUOVA) --- */}
-            <div className="bg-red-900/10 backdrop-blur-md border border-red-500/20 p-6 md:p-8 rounded-3xl shadow-xl mt-8">
-                 <h2 className="text-xl font-bold text-red-200 mb-4 border-b border-red-500/20 pb-2">Zona Pericolo</h2>
-                 <p className="text-stone-300 text-sm mb-6">
-                    Una volta eliminato il tuo account, non potrai più tornare indietro. Tutti i tuoi dati verranno rimossi permanentemente.
+            {/* --- SEZIONE 3: ELIMINA (Senza titolo) --- */}
+            <div className="bg-red-900/10 backdrop-blur-md border border-red-500/20 p-6 md:p-8 rounded-3xl shadow-xl mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                 <p className="text-stone-300 text-sm">
+                    Vuoi eliminare il tuo account? Questa azione è irreversibile e rimuoverà tutti i tuoi dati.
                  </p>
-                 <div className="flex justify-end">
-                    <button 
-                        onClick={() => setShowDeleteModal(true)} 
-                        className="px-6 py-3 bg-red-600/80 hover:bg-red-500 text-white font-bold rounded-xl border border-red-400/30 shadow-lg transition flex items-center gap-2"
-                    >
-                        🗑️ Elimina Account
-                    </button>
-                 </div>
+                 <button 
+                    onClick={() => setShowDeleteModal(true)} 
+                    className="px-6 py-3 bg-red-600/80 hover:bg-red-500 text-white font-bold rounded-xl border border-red-400/30 shadow-lg transition flex items-center gap-2 whitespace-nowrap justify-center"
+                >
+                    🗑️ Elimina Account
+                </button>
             </div>
 
         </div>
