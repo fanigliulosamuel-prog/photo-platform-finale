@@ -14,14 +14,17 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Stato per il menu laterale
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Stato per il MODALE di eliminazione
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Dati Profilo
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false); 
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Dati Sicurezza
   const [newEmail, setNewEmail] = useState("");
@@ -35,11 +38,11 @@ export default function SettingsPage() {
         return;
       }
       setUser(user);
-      setNewEmail(user.email || ""); 
+      setNewEmail(user.email || "");
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('*') 
+        .select('*')
         .eq('id', user.id)
         .single();
 
@@ -48,7 +51,7 @@ export default function SettingsPage() {
         setBio(data.bio || "");
         setCity(data.city || "");
         setAvatarUrl(data.avatar_url || "");
-        if (data.is_admin) setIsAdmin(true); 
+        if (data.is_admin) setIsAdmin(true);
       }
       setLoading(false);
     }
@@ -129,13 +132,31 @@ export default function SettingsPage() {
     else alert("Controlla la TUA NUOVA e la TUA VECCHIA casella di posta per confermare il cambio indirizzo.");
   }
 
+  // ELIMINA ACCOUNT (Logica)
+  async function deleteAccount() {
+    try {
+        setLoading(true);
+        // 1. Elimina dati profilo (se non c'è cascade nel DB)
+        const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
+        if (profileError) throw profileError;
+
+        // 2. Logout e redirect (Nota: la cancellazione completa dall'Auth di Supabase richiede solitamente una Admin Function o RPC)
+        await supabase.auth.signOut();
+        router.push('/'); 
+    } catch (error: any) {
+        alert("Errore durante l'eliminazione: " + error.message);
+        setLoading(false);
+        setShowDeleteModal(false);
+    }
+  }
+
   if (loading) return <div className="min-h-screen bg-stone-600 flex items-center justify-center text-white">Caricamento...</div>;
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
       
       {/* Texture Sfondo */}
-      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
+      <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay"
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
@@ -174,7 +195,6 @@ export default function SettingsPage() {
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Account</p>
             <Link href="/notifications" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🔔 Notifiche</Link>
             
-            {/* Link Attivo */}
             <Link href="/settings" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>⚙️ Impostazioni</Link>
           </nav>
           
@@ -195,7 +215,7 @@ export default function SettingsPage() {
             <h1 className={`${playfair.className} text-2xl font-bold text-white`}>Impostazioni</h1>
         </div>
 
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-8 pb-10">
             <div className="flex justify-between items-center mb-4 hidden md:flex">
                 <h1 className="text-3xl font-bold text-white">Impostazioni Account</h1>
                 {isAdmin && (
@@ -207,7 +227,6 @@ export default function SettingsPage() {
                 )}
             </div>
             
-            {/* Bottone Admin per Mobile */}
             {isAdmin && (
                  <div className="md:hidden mb-6">
                     <Link href="/admin" className="block text-center text-sm bg-red-600 hover:bg-red-500 px-4 py-2 rounded-full text-white font-bold transition shadow-lg">
@@ -232,10 +251,10 @@ export default function SettingsPage() {
                     <div className="flex-1 space-y-5">
                         <div>
                             <label className="block text-xs font-bold text-stone-200 uppercase mb-2">Username</label>
-                            <input 
-                                type="text" 
-                                value={username} 
-                                onChange={(e) => setUsername(e.target.value)} 
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
                                 className="w-full bg-stone-600/50 border border-stone-500/50 rounded-xl p-3 text-white focus:border-amber-400 outline-none"
                             />
                             <p className="text-[10px] text-stone-300 mt-1">Deve essere unico.</p>
@@ -248,7 +267,7 @@ export default function SettingsPage() {
             </div>
 
             {/* --- SEZIONE 2: SICUREZZA --- */}
-            <div className="bg-stone-400/20 backdrop-blur-md border border-stone-300/30 p-6 md:p-8 rounded-3xl shadow-xl pb-20">
+            <div className="bg-stone-400/20 backdrop-blur-md border border-stone-300/30 p-6 md:p-8 rounded-3xl shadow-xl">
                 <h2 className="text-xl font-bold text-amber-100 mb-6 border-b border-stone-500/30 pb-2">Sicurezza & Accesso</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -265,8 +284,63 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* --- SEZIONE 3: ZONA PERICOLO (NUOVA) --- */}
+            <div className="bg-red-900/10 backdrop-blur-md border border-red-500/20 p-6 md:p-8 rounded-3xl shadow-xl mt-8">
+                 <h2 className="text-xl font-bold text-red-200 mb-4 border-b border-red-500/20 pb-2">Zona Pericolo</h2>
+                 <p className="text-stone-300 text-sm mb-6">
+                    Una volta eliminato il tuo account, non potrai più tornare indietro. Tutti i tuoi dati verranno rimossi permanentemente.
+                 </p>
+                 <div className="flex justify-end">
+                    <button 
+                        onClick={() => setShowDeleteModal(true)} 
+                        className="px-6 py-3 bg-red-600/80 hover:bg-red-500 text-white font-bold rounded-xl border border-red-400/30 shadow-lg transition flex items-center gap-2"
+                    >
+                        🗑️ Elimina Account
+                    </button>
+                 </div>
+            </div>
+
         </div>
       </main>
+
+      {/* --- POPUP DI CONFERMA (MODALE) --- */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            {/* Overlay Sfondo Scuro */}
+            <div 
+                className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm transition-opacity" 
+                onClick={() => setShowDeleteModal(false)}
+            ></div>
+
+            {/* Contenuto Modale */}
+            <div className="bg-stone-800 border border-stone-600 rounded-3xl p-8 max-w-md w-full shadow-2xl relative z-10 transform transition-all scale-100">
+                <h3 className={`${playfair.className} text-2xl font-bold text-white mb-4`}>
+                    Sei assolutamente sicuro?
+                </h3>
+                <p className="text-stone-300 mb-8 leading-relaxed">
+                    Questa azione <span className="text-red-400 font-bold">non può essere annullata</span>. 
+                    Il tuo profilo pubblico, le tue impostazioni e i tuoi dati verranno rimossi dai nostri server.
+                </p>
+
+                <div className="flex flex-col gap-3">
+                    <button 
+                        onClick={deleteAccount} 
+                        className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition shadow-lg"
+                    >
+                        Sì, elimina il mio account
+                    </button>
+                    <button 
+                        onClick={() => setShowDeleteModal(false)} 
+                        className="w-full py-3 bg-stone-700 hover:bg-stone-600 text-stone-200 font-medium rounded-xl transition border border-stone-500/30"
+                    >
+                        Annulla
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 }
