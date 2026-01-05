@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useParams, useSearchParams } from 'next/navigation'; // Aggiunto useSearchParams
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
+// --- TIPI ---
 type Photo = {
   id: number;
   title: string;
@@ -19,6 +20,7 @@ type Profile = {
   bio: string;
   city: string;
   avatar_url: string;
+  is_admin?: boolean; // <--- Campo necessario per il Badge
 }
 
 type Post = {
@@ -32,10 +34,11 @@ type Post = {
 
 export default function ProfilePage() {
   const params = useParams();
-  const searchParams = useSearchParams(); // Hook per leggere i parametri URL
+  const searchParams = useSearchParams(); 
   
+  // Decodifica il nome (es. "Mario%20Rossi" -> "Mario Rossi")
   const authorName = decodeURIComponent(params?.name as string);
-  const fromAdmin = searchParams?.get('from') === 'admin'; // Controlla se arrivi dall'admin
+  const fromAdmin = searchParams?.get('from') === 'admin';
 
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [posts, setPosts] = useState<Post[]>([]); 
@@ -54,67 +57,72 @@ export default function ProfilePage() {
     async function fetchData() {
       if (!authorName) return;
 
-      // 1. Chi sono io?
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user ? user.id : null);
-      
-      // 2. Chi è l'autore del profilo?
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .ilike('username', authorName)
-        .single();
+      try {
+        // 1. Chi sono io?
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUserId(user ? user.id : null);
+        
+        // 2. Chi è l'autore del profilo?
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .ilike('username', authorName)
+          .single();
 
-      if (profileData) {
-        setProfile(profileData);
+        if (profileData) {
+          setProfile(profileData);
 
-        // 3. Controllo se lo seguo già
-        if (user) {
-            const { data: followData } = await supabase
-                .from('follows')
-                .select('*')
-                .eq('follower_id', user.id)
-                .eq('following_id', profileData.id)
-                .maybeSingle();
-            
-            if (followData) setIsFollowing(true);
+          // 3. Controllo se lo seguo già
+          if (user) {
+             const { data: followData } = await supabase
+                 .from('follows')
+                 .select('*')
+                 .eq('follower_id', user.id)
+                 .eq('following_id', profileData.id)
+                 .maybeSingle();
+             
+             if (followData) setIsFollowing(true);
+          }
+
+          // 4. Conta i follower totali
+          const { count } = await supabase
+              .from('follows')
+              .select('*', { count: 'exact', head: true })
+              .eq('following_id', profileData.id);
+          
+          setFollowersCount(count || 0);
         }
 
-        // 4. Conta i follower totali
-        const { count } = await supabase
-            .from('follows')
-            .select('*', { count: 'exact', head: true })
-            .eq('following_id', profileData.id);
-        
-        setFollowersCount(count || 0);
+        // 5. Prendi le foto (SOLO QUELLE PUBBLICHE)
+        const { data: photosData } = await supabase
+          .from('photos')
+          .select('*')
+          .eq('author_name', authorName)
+          .is('project_id', null) 
+          .order('created_at', { ascending: false });
+
+        if (photosData) setPhotos(photosData);
+
+        // 6. Prendi i POST DEL BLOG dell'autore
+        const { data: postsData } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('author', authorName)
+          .order('created_at', { ascending: false });
+
+        if (postsData) setPosts(postsData);
+
+      } catch (error) {
+        console.error("Errore caricamento profilo:", error);
+      } finally {
+        setLoading(false);
       }
-
-      // 5. Prendi le foto (SOLO QUELLE PUBBLICHE)
-      const { data: photosData } = await supabase
-        .from('photos')
-        .select('*')
-        .eq('author_name', authorName)
-        .is('project_id', null) 
-        .order('created_at', { ascending: false });
-
-      if (photosData) setPhotos(photosData);
-
-      // 6. Prendi i POST DEL BLOG dell'autore
-      const { data: postsData } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('author', authorName)
-        .order('created_at', { ascending: false });
-
-      if (postsData) setPosts(postsData);
-
-      setLoading(false);
     }
 
     fetchData();
   }, [authorName]);
 
-  // --- NUOVA GESTIONE FOLLOW (ATOMICA) ---
+  // --- GESTIONE FOLLOW (ATOMICA) ---
   async function handleFollow() {
     if (!currentUserId) return alert("Devi accedere per seguire gli utenti.");
     if (!profile) return;
@@ -133,7 +141,6 @@ export default function ProfilePage() {
     }
 
     try {
-        // Chiama la funzione SQL 'toggle_follow'
         const { error } = await supabase.rpc('toggle_follow', { 
             target_user_id: profile.id 
         });
@@ -142,11 +149,22 @@ export default function ProfilePage() {
 
     } catch (error: any) {
         console.error("Errore Follow:", error);
-        // Rollback visuale in caso di errore
         setIsFollowing(prevFollowing);
         setFollowersCount(prevCount);
-        alert("Errore Follow: " + error.message);
+        alert("Impossibile seguire l'utente: " + error.message);
     }
+  }
+
+  // --- UI DI CARICAMENTO / ERRORE ---
+  if (!loading && !profile) {
+    return (
+        <main className="min-h-screen bg-stone-900 text-white flex items-center justify-center">
+            <div className="text-center">
+                <h1 className="text-4xl font-bold mb-4">Profilo non trovato</h1>
+                <Link href="/explore" className="text-amber-400 hover:underline">Torna alla home</Link>
+            </div>
+        </main>
+    );
   }
 
   return (
@@ -157,13 +175,12 @@ export default function ProfilePage() {
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali Calde */}
+      {/* Luci Ambientali */}
       <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
       {/* Navigazione */}
       <nav className="relative z-20 p-8 flex justify-between items-center max-w-7xl mx-auto w-full">
-        {/* PULSANTE INDIETRO INTELLIGENTE */}
         <Link 
             href={fromAdmin ? "/admin" : "/explore"} 
             className="flex items-center gap-2 text-stone-200 hover:text-white transition bg-stone-400/20 px-5 py-2 rounded-full border border-stone-400/30 backdrop-blur-md"
@@ -188,15 +205,38 @@ export default function ProfilePage() {
 
           <div className="flex-1 w-full">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                
+                {/* NOME + BADGE */}
                 <div>
-                    <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-1">{authorName}</h1>
-                    <p className="text-stone-300 flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-1">
+                            {authorName}
+                        </h1>
+                        
+                        {/* --- INIZIO LOGICA BADGE --- */}
+                        {profile?.is_admin && (
+                            <div className="group relative flex items-center justify-center bg-amber-500 text-stone-900 w-7 h-7 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.6)] cursor-help">
+                                {/* Icona Spunta */}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                    <path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.498 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.491 4.491 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+                                </svg>
+                                {/* Tooltip Badge */}
+                                <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-stone-900 text-amber-500 text-xs font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none border border-amber-500/30">
+                                    Profilo Verificato
+                                </span>
+                            </div>
+                        )}
+                        {/* --- FINE LOGICA BADGE --- */}
+
+                    </div>
+
+                    <p className="text-stone-300 flex items-center gap-2 mt-1">
                         Fotografo 
                         {profile?.city && <span className="text-amber-200/80">• {profile.city} 📍</span>}
                     </p>
                 </div>
                 
-                {/* BOTTONE FOLLOW DINAMICO */}
+                {/* BOTTONE FOLLOW */}
                 {currentUserId !== profile?.id && (
                     <button 
                         onClick={handleFollow}
@@ -245,9 +285,15 @@ export default function ProfilePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {photos.map((photo) => (
-              <Link href={`/photo/${photo.id}${fromAdmin ? '?from=admin' : ''}`} key={photo.id} className="group relative aspect-square bg-stone-800 rounded-2xl overflow-hidden cursor-pointer border border-stone-500/30 hover:border-amber-400/50 transition duration-500 shadow-lg">
+              <Link 
+                href={`/photo/${photo.id}${fromAdmin ? '?from=admin' : ''}`} 
+                key={photo.id} 
+                className="group relative aspect-square bg-stone-800 rounded-2xl overflow-hidden cursor-pointer border border-stone-500/30 hover:border-amber-400/50 transition duration-500 shadow-lg"
+              >
                 <img 
                   src={photo.url} 
+                  alt={photo.title}
+                  loading="lazy"
                   className="w-full h-full object-cover transition duration-700 group-hover:scale-110" 
                 />
                 <div className="absolute inset-0 bg-stone-900/80 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center flex-col gap-2 backdrop-blur-sm">
@@ -265,7 +311,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* --- SEZIONE BLOG & STORIE --- */}
+        {/* --- SEZIONE BLOG --- */}
         {posts.length > 0 && (
             <>
                 <div className="flex items-center gap-4 mb-8">
@@ -277,11 +323,17 @@ export default function ProfilePage() {
                         <Link href={`/blog/${post.slug}`} key={post.id} className="block group bg-stone-400/20 border border-stone-400/30 rounded-2xl overflow-hidden backdrop-blur-md hover:border-amber-400/50 transition duration-300 shadow-lg">
                             <div className="flex h-40">
                                 <div className="w-1/3 overflow-hidden relative">
-                                    <img src={post.image_url || "https://placehold.co/600x400/57534e/d6d3d1?text=Story"} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
+                                    <img 
+                                      src={post.image_url || "https://placehold.co/600x400/57534e/d6d3d1?text=Story"} 
+                                      alt={post.title}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition duration-700" 
+                                    />
                                 </div>
                                 <div className="w-2/3 p-4 flex flex-col justify-center">
                                     <h3 className="text-xl font-bold text-white group-hover:text-amber-200 transition line-clamp-1">{post.title}</h3>
-                                    <p className="text-stone-300 text-sm line-clamp-2 mt-2">{post.content}</p>
+                                    <p className="text-stone-300 text-sm line-clamp-2 mt-2">
+                                        {post.content.substring(0, 150)}...
+                                    </p>
                                     <p className="text-stone-500 text-xs mt-3">{new Date(post.created_at).toLocaleDateString()}</p>
                                 </div>
                             </div>
