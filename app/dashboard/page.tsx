@@ -190,15 +190,13 @@ export default function Dashboard() {
         {/* --- AREA PRINCIPALE (Scroll naturale) --- */}
         <main className="flex-1 p-4 md:p-8 w-full">
           
-          <div className="flex justify-between items-center mb-10">
+          <div className="flex items-center mb-10">
             <button onClick={() => setIsMenuOpen(true)} className="text-white md:hidden text-3xl mr-4">☰</button>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato, {profile.username}</h1>
               <p className="text-stone-200">Il tuo hub personale per gestire l'arte.</p>
             </div>
-            <Link href="/upload" className="hidden sm:block">
-              <button className="bg-stone-100 text-stone-900 px-8 py-3 rounded-full font-bold hover:scale-105 transition shadow-[0_0_20px_rgba(255,255,255,0.2)]">+ Nuovo Progetto</button>
-            </Link>
+            {/* PULSANTE RIMOSSO QUI */}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -232,6 +230,7 @@ export default function Dashboard() {
           </h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pb-10">
+            {/* Card per caricare nuove foto - mantenuta */}
             <Link href="/upload" className="aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex flex-col items-center justify-center text-stone-400 hover:border-amber-200 hover:text-white hover:bg-white/10 transition cursor-pointer group">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition group-hover:bg-amber-700/50 shadow-lg"><span className="text-3xl">+</span></div>
                 <span className="font-medium tracking-wide">Carica Foto</span>
