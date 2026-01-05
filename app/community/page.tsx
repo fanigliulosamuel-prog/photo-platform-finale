@@ -19,9 +19,13 @@ type Profile = {
 export default function CommunityPage() {
   const router = useRouter();
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  
+  // --- STATI DI RICERCA ---
   const [searchCity, setSearchCity] = useState("");
+  const [searchName, setSearchName] = useState(""); // <--- Nuovo stato per il nome
+  
   const [loading, setLoading] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Stato per il menu laterale
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchProfiles();
@@ -31,8 +35,14 @@ export default function CommunityPage() {
     setLoading(true);
     let query = supabase.from('profiles').select('*');
 
+    // Filtra per Città (se inserita)
     if (searchCity.trim() !== "") {
       query = query.ilike('city', `%${searchCity}%`);
+    }
+
+    // Filtra per Nome Utente (se inserito)
+    if (searchName.trim() !== "") {
+        query = query.ilike('username', `%${searchName}%`);
     }
 
     const { data, error } = await query;
@@ -119,23 +129,43 @@ export default function CommunityPage() {
                     Trova un Fotografo
                 </h1>
                 <p className="text-stone-200 text-lg font-light max-w-2xl mx-auto mb-10 hidden md:block">
-                    Cerca talenti vicino a te per il tuo prossimo progetto.
+                    Cerca talenti per città o per nome per il tuo prossimo progetto.
                 </p>
 
-                {/* Barra di ricerca */}
-                <form onSubmit={handleSearch} className="relative w-full max-w-md mx-auto group">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                        <span className="text-stone-400 text-xl">📍</span>
+                {/* --- NUOVA BARRA DI RICERCA DOPPIA --- */}
+                <form onSubmit={handleSearch} className="w-full max-w-4xl mx-auto flex flex-col md:flex-row gap-4 items-center">
+                    
+                    {/* INPUT CITTA' */}
+                    <div className="relative w-full group">
+                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                            <span className="text-stone-400 text-xl">📍</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="Cerca per città..." 
+                            value={searchCity}
+                            onChange={(e) => setSearchCity(e.target.value)}
+                            className="w-full pl-12 pr-4 py-4 bg-stone-400/30 border border-stone-300/30 rounded-full text-white placeholder-stone-300 focus:outline-none focus:bg-stone-400/50 focus:border-amber-400 focus:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all"
+                        />
                     </div>
-                    <input 
-                        type="text" 
-                        placeholder="Cerca per città (es. Milano, Roma)..." 
-                        value={searchCity}
-                        onChange={(e) => setSearchCity(e.target.value)}
-                        className="w-full pl-12 pr-32 py-4 bg-stone-400/30 border border-stone-300/30 rounded-full text-white placeholder-stone-300 focus:outline-none focus:bg-stone-400/50 focus:border-amber-400 focus:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all"
-                    />
-                    <button className="absolute right-2 top-2 bottom-2 px-6 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-full transition shadow-lg">
-                        Cerca
+
+                    {/* INPUT NOME */}
+                    <div className="relative w-full group">
+                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                            <span className="text-stone-400 text-xl">👤</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="Cerca per nome..." 
+                            value={searchName}
+                            onChange={(e) => setSearchName(e.target.value)}
+                            className="w-full pl-12 pr-4 py-4 bg-stone-400/30 border border-stone-300/30 rounded-full text-white placeholder-stone-300 focus:outline-none focus:bg-stone-400/50 focus:border-amber-400 focus:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all"
+                        />
+                    </div>
+
+                    {/* BOTTONE CERCA */}
+                    <button className="w-full md:w-auto px-10 py-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-full transition shadow-lg whitespace-nowrap">
+                        Cerca 🔎
                     </button>
                 </form>
             </div>
@@ -182,7 +212,9 @@ export default function CommunityPage() {
 
                 {profiles.length === 0 && (
                 <div className="col-span-full text-center py-20 bg-stone-400/20 rounded-3xl border border-dashed border-stone-400/30">
-                    <p className="text-stone-200 text-xl font-light">Nessun fotografo trovato a "{searchCity}".</p>
+                    <p className="text-stone-200 text-xl font-light">
+                        Nessun fotografo trovato. Prova a modificare i filtri.
+                    </p>
                 </div>
                 )}
             </div>
