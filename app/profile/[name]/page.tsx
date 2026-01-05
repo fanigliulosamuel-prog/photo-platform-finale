@@ -20,7 +20,7 @@ type Profile = {
   bio: string;
   city: string;
   avatar_url: string;
-  badge_url?: string; // <--- MODIFICATO: Ora usiamo l'URL del badge
+  badges?: string; // <--- MODIFICATO: Ora corrisponde al nome della tua colonna su Supabase
 }
 
 type Post = {
@@ -213,12 +213,12 @@ export default function ProfilePage() {
                             {authorName}
                         </h1>
                         
-                        {/* --- INIZIO LOGICA BADGE (AGGIORNATA) --- */}
-                        {profile?.badge_url && (
+                        {/* --- INIZIO LOGICA BADGE (AGGIORNATA PER LA COLONNA "badges") --- */}
+                        {profile?.badges && (
                             <div className="group relative flex items-center justify-center cursor-help ml-1">
                                 {/* Immagine Badge dal Database */}
                                 <img 
-                                    src={profile.badge_url} 
+                                    src={profile.badges} 
                                     alt="Badge Utente" 
                                     className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(251,191,36,0.5)] hover:scale-110 transition-transform duration-300"
                                 />
