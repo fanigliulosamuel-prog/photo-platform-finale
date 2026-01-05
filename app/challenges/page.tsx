@@ -51,6 +51,7 @@ type Photo = {
   author_name: string;
   url: string;
   likes: number;
+  user_id: string; // Aggiunto user_id per l'assegnazione badge
 }
 
 export default function ChallengesPage() {
@@ -66,6 +67,40 @@ export default function ChallengesPage() {
   // Determiniamo quale sfida mostrare in base allo stato
   const activeChallengeData = challengeState === 'winner_announced' ? CHALLENGES_CALENDAR[1] : CHALLENGES_CALENDAR[0];
   const activeDeadline = challengeState === 'winner_announced' ? CURRENT_DEADLINE : PREVIOUS_DEADLINE;
+
+  // Funzione per assegnare il badge al vincitore
+  const assignWinnerBadge = async (winnerUserId: string, badgeName: string) => {
+    try {
+      // 1. Recupera il profilo attuale
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('badges')
+        .eq('id', winnerUserId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // 2. Controlla se ha già il badge
+      const currentBadges = profile.badges || [];
+      if (!currentBadges.includes(badgeName)) {
+        // 3. Aggiungi il nuovo badge
+        const updatedBadges = [...currentBadges, badgeName];
+
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ badges: updatedBadges })
+          .eq('id', winnerUserId);
+
+        if (updateError) throw updateError;
+        console.log(`Badge "${badgeName}" assegnato con successo all'utente ${winnerUserId}`);
+      } else {
+        console.log(`L'utente ha già il badge "${badgeName}"`);
+      }
+
+    } catch (error) {
+      console.error("Errore nell'assegnazione del badge:", error);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -91,6 +126,19 @@ export default function ChallengesPage() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Effetto separato per gestire l'assegnazione del badge quando lo stato cambia
+  useEffect(() => {
+    if (challengeState === 'winner_announced' && photos.length > 0) {
+      const winner = photos[0];
+      const badgeToAssign = CHALLENGES_CALENDAR[0].prizeBadge; // Badge della sfida passata
+      
+      if (winner && winner.user_id) {
+        assignWinnerBadge(winner.user_id, badgeToAssign);
+      }
+    }
+  }, [challengeState, photos]);
+
 
   const calculateTimeLeft = (distance: number) => {
     if (distance < 0) distance = 0;
@@ -135,7 +183,7 @@ export default function ChallengesPage() {
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
             {/* Link Attivo */}
-            <Link href="/challenges" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>🏆 Sfida del Mese</Link>
+            <Link href="/challenges" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>🏆 Sfide</Link>
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
             <Link href="/upload" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📤 Carica Foto</Link>
