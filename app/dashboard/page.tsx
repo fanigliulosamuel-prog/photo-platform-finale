@@ -4,11 +4,16 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { Playfair_Display } from 'next/font/google';
+
+// Font per dare un tocco elegante al banner del badge
+const playfair = Playfair_Display({ subsets: ['latin'] });
 
 type Profile = {
   username: string;
   avatar_url: string;
   city: string;
+  badges?: string; // <--- MODIFICA: Aggiunto campo badges
 };
 
 type Photo = {
@@ -164,7 +169,7 @@ export default function Dashboard() {
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
-            <Link href="/challenges" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🏆 Sfide del Mese</Link>
+            <Link href="/challenges" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🏆 Sfida del Mese</Link>
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
 
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
@@ -196,8 +201,46 @@ export default function Dashboard() {
               <h1 className="text-3xl md:text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato, {profile.username}</h1>
               <p className="text-stone-200">Il tuo hub personale per gestire l'arte.</p>
             </div>
-            {/* PULSANTE RIMOSSO QUI */}
           </div>
+
+          {/* --- INIZIO NUOVA SEZIONE: BADGE VINTO --- */}
+            {profile?.badges && (
+                <div className="mb-10 animate-fade-in-down">
+                    <div className="bg-gradient-to-r from-amber-500/20 to-orange-600/20 border border-amber-500/30 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_40px_rgba(245,158,11,0.15)] relative overflow-hidden">
+                        
+                        {/* Effetto bagliore sfondo */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 blur-[80px] rounded-full pointer-events-none"></div>
+
+                        {/* Immagine Badge */}
+                        <div className="relative shrink-0">
+                            <div className="absolute inset-0 bg-amber-400 blur-xl opacity-40 animate-pulse"></div>
+                            <img 
+                                src={profile.badges} 
+                                alt="Badge Vinto" 
+                                className="w-24 h-24 object-contain relative z-10 drop-shadow-2xl hover:scale-110 transition duration-500"
+                            />
+                        </div>
+
+                        {/* Testo */}
+                        <div className="text-center md:text-left z-10">
+                            <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                                <span className="bg-amber-500 text-stone-900 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Nuovo Traguardo</span>
+                            </div>
+                            <h3 className={`${playfair.className} text-2xl font-bold text-amber-200 mb-1`}>Hai vinto la Sfida Mensile!</h3>
+                            <p className="text-stone-200 text-sm">
+                                Complimenti! Il badge ufficiale è stato aggiunto al tuo profilo pubblico. 
+                                La community ti riconosce come un Maestro.
+                            </p>
+                        </div>
+
+                        {/* Bottone */}
+                        <Link href={`/profile/${profile.username}`} className="md:ml-auto px-6 py-3 bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold rounded-xl shadow-lg transition transform hover:scale-105">
+                            Vedi nel Profilo →
+                        </Link>
+                    </div>
+                </div>
+            )}
+            {/* --- FINE SEZIONE BADGE --- */}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <Link href="/dashboard/followers" className="block transform transition hover:scale-[1.02]">

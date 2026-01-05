@@ -178,10 +178,10 @@ export default function ChallengesPage() {
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
             
-            {/* --- PULSANTE STANDARD: SFIDA DEL MESE --- */}
+            {/* --- PULSANTE "SFIDA DEL MESE" ATTIVO (EVIDENZIATO) --- */}
             <Link 
                 href="/challenges" 
-                className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" 
+                className="flex items-center gap-3 p-3 bg-white/10 text-white rounded-xl font-bold shadow-lg border border-white/5" 
                 onClick={() => setIsMenuOpen(false)}
             >
                 🏆 Sfida del Mese
