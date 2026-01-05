@@ -6,14 +6,13 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Playfair_Display } from 'next/font/google';
 
-// Font per dare un tocco elegante al banner del badge
 const playfair = Playfair_Display({ subsets: ['latin'] });
 
 type Profile = {
   username: string;
   avatar_url: string;
   city: string;
-  badges?: string; // <--- MODIFICA: Aggiunto campo badges
+  badges?: string; 
 };
 
 type Photo = {
@@ -51,7 +50,6 @@ export default function Dashboard() {
         return;
       }
       
-      // 1. Profilo
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
@@ -61,7 +59,6 @@ export default function Dashboard() {
       if (profileData) {
         setProfile(profileData as Profile);
         
-        // 2. Foto
         const { data: photosData } = await supabase
           .from('photos')
           .select('id, url, likes')
@@ -70,7 +67,6 @@ export default function Dashboard() {
 
         setUserPhotos(photosData || []);
 
-        // 3. Followers
         const { data: followsData } = await supabase
             .from('follows')
             .select('follower_id')
@@ -133,23 +129,18 @@ export default function Dashboard() {
   );
 
   return (
-    // FIX SCROLL: Rimosso overflow-hidden, usiamo min-h-screen per permettere lo scroll naturale
     <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative">
       
-      {/* Texture Sfondo FISSATA (Fixed) */}
       <div className="fixed inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* Luci Ambientali FISSATE */}
       <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* Container Principale */}
       <div className="flex w-full relative z-10">
         
         {/* --- SIDEBAR --- */}
-        {/* FIX SIDEBAR: Su mobile è fixed e nascosta. Su Desktop è STICKY (rimane ferma mentre scorri) */}
         <aside className={`
           fixed inset-y-0 left-0 w-64 bg-stone-700/90 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 z-50 transition-transform duration-300
           md:sticky md:top-0 md:h-screen md:translate-x-0
@@ -169,7 +160,10 @@ export default function Dashboard() {
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
+            
+            {/* LINK SFIDA STANDARD */}
             <Link href="/challenges" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🏆 Sfida del Mese</Link>
+            
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
 
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
@@ -189,10 +183,9 @@ export default function Dashboard() {
           </div>
         </aside>
         
-        {/* Overlay Mobile */}
         {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
-        {/* --- AREA PRINCIPALE (Scroll naturale) --- */}
+        {/* --- AREA PRINCIPALE --- */}
         <main className="flex-1 p-4 md:p-8 w-full">
           
           <div className="flex items-center mb-10">
@@ -203,40 +196,24 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* --- INIZIO NUOVA SEZIONE: BADGE VINTO --- */}
+          {/* --- SEZIONE BADGE MINIMAL (SOLO ICONA + TESTI) --- */}
             {profile?.badges && (
-                <div className="mb-10 animate-fade-in-down">
-                    <div className="bg-gradient-to-r from-amber-500/20 to-orange-600/20 border border-amber-500/30 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_40px_rgba(245,158,11,0.15)] relative overflow-hidden">
-                        
-                        {/* Effetto bagliore sfondo */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 blur-[80px] rounded-full pointer-events-none"></div>
-
-                        {/* Immagine Badge */}
-                        <div className="relative shrink-0">
-                            <div className="absolute inset-0 bg-amber-400 blur-xl opacity-40 animate-pulse"></div>
-                            <img 
-                                src={profile.badges} 
-                                alt="Badge Vinto" 
-                                className="w-24 h-24 object-contain relative z-10 drop-shadow-2xl hover:scale-110 transition duration-500"
-                            />
-                        </div>
-
-                        {/* Testo */}
-                        <div className="text-center md:text-left z-10">
-                            <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                                <span className="bg-amber-500 text-stone-900 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Nuovo Traguardo</span>
-                            </div>
-                            <h3 className={`${playfair.className} text-2xl font-bold text-amber-200 mb-1`}>Hai vinto la Sfida Mensile!</h3>
-                            <p className="text-stone-200 text-sm">
-                                Complimenti! Il badge ufficiale è stato aggiunto al tuo profilo pubblico. 
-                                La community ti riconosce come un Maestro.
-                            </p>
-                        </div>
-
-                        {/* Bottone */}
-                        <Link href={`/profile/${profile.username}`} className="md:ml-auto px-6 py-3 bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold rounded-xl shadow-lg transition transform hover:scale-105">
-                            Vedi nel Profilo →
-                        </Link>
+                <div className="mb-8 flex items-center gap-4 bg-stone-800/40 p-4 rounded-2xl border border-stone-700 w-fit">
+                    {/* Immagine Stemma */}
+                    <img 
+                        src={profile.badges} 
+                        alt="Badge" 
+                        className="w-16 h-16 object-contain drop-shadow-lg"
+                    />
+                    
+                    {/* Testi */}
+                    <div className="flex flex-col">
+                        <span className={`${playfair.className} text-xl font-bold text-amber-400 leading-none`}>
+                           Maestro delle Luci
+                        </span>
+                        <span className="text-stone-400 text-sm uppercase tracking-wider font-bold mt-1">
+                           Dicembre
+                        </span>
                     </div>
                 </div>
             )}
@@ -273,7 +250,6 @@ export default function Dashboard() {
           </h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pb-10">
-            {/* Card per caricare nuove foto - mantenuta */}
             <Link href="/upload" className="aspect-square bg-white/5 rounded-3xl border-2 border-dashed border-stone-400/30 flex flex-col items-center justify-center text-stone-400 hover:border-amber-200 hover:text-white hover:bg-white/10 transition cursor-pointer group">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition group-hover:bg-amber-700/50 shadow-lg"><span className="text-3xl">+</span></div>
                 <span className="font-medium tracking-wide">Carica Foto</span>
@@ -281,19 +257,13 @@ export default function Dashboard() {
             
             {userPhotos.map(photo => (
                 <div key={photo.id} className="aspect-square bg-stone-800 rounded-3xl overflow-hidden relative group border border-stone-500/30 shadow-xl">
-                  
                   <img src={photo.url} className="w-full h-full object-cover" />
-                  
-                  {/* FIX TABLET E MOBILE: Sempre visibile su touch, hover su PC */}
-                  <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300
-                                  opacity-100 xl:opacity-0 xl:group-hover:opacity-100">
-                      
+                  <div className="absolute inset-0 bg-stone-900/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300 opacity-100 xl:opacity-0 xl:group-hover:opacity-100">
                       <Link href={`/photo/${photo.id}`}>
                         <button className="text-white font-bold border border-white/30 bg-white/10 px-5 py-2 rounded-full hover:bg-white hover:text-stone-900 transition cursor-pointer text-sm">
                             Visualizza
                         </button>
                       </Link>
-                      
                       <button 
                         onClick={(e) => {
                            e.preventDefault(); 
