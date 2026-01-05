@@ -24,7 +24,7 @@ type Photo = {
 
 export default function PrivateProjectsPage() {
   const router = useRouter();
-  
+   
   // Stati Generali
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string>(""); 
@@ -42,6 +42,9 @@ export default function PrivateProjectsPage() {
   const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null);
   const [newPhotoTitle, setNewPhotoTitle] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Stato per il Link Condivisione
+  const [copied, setCopied] = useState(false);
 
   // Caricamento Iniziale
   useEffect(() => {
@@ -75,18 +78,19 @@ export default function PrivateProjectsPage() {
   useEffect(() => {
     async function fetchProjectPhotos() {
       if (!selectedProject) return;
-      
+       
       const { data } = await supabase
         .from('photos')
         .select('*')
         .eq('project_id', selectedProject.id)
         .order('created_at', { ascending: false });
-      
+       
       setProjectPhotos(data || []);
+      setCopied(false); // Reset stato copia quando cambio progetto
     }
     fetchProjectPhotos();
   }, [selectedProject]);
-  
+   
   async function handleCreateProject(e: React.FormEvent) {
     e.preventDefault();
     if (!newProjectName.trim() || !userId) return;
@@ -112,7 +116,7 @@ export default function PrivateProjectsPage() {
 
   async function handleDeleteProject(projectId: number) {
     if (!window.confirm('Vuoi davvero eliminare questo progetto e tutte le sue foto?')) return;
-    
+     
     const originalProjects = projects;
     setProjects(projects.filter(p => p.id !== projectId));
 
@@ -173,6 +177,22 @@ export default function PrivateProjectsPage() {
       setProjectPhotos(projectPhotos.filter(p => p.id !== photoId));
       await supabase.from('photos').delete().eq('id', photoId);
   }
+
+  // Funzione per generare e copiare il link
+  const getShareLink = () => {
+    if (typeof window !== 'undefined' && selectedProject) {
+       // NOTA: Assicurati di avere una pagina /share/[id] o /client-view/[id] nel tuo routing
+       return `${window.location.origin}/share/${selectedProject.id}`;
+    }
+    return '';
+  };
+
+  const copyToClipboard = () => {
+    const link = getShareLink();
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
@@ -311,6 +331,46 @@ export default function PrivateProjectsPage() {
                           <span className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-xs font-bold uppercase border border-green-500/30">Attivo</span>
                         </div>
                     </div>
+
+                    {/* --- NUOVA SEZIONE: CONDIVISIONE LINK CLIENTE --- */}
+                    <div className="bg-stone-500/30 border border-stone-400/30 p-6 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-inner">
+                        <div>
+                            <h3 className="font-bold text-lg text-amber-100 flex items-center gap-2">🔗 Condivisione Cliente</h3>
+                            <p className="text-stone-300 text-sm mt-1">
+                                Condividi questo link per permettere al cliente di vedere il progetto.
+                            </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                             <div className="relative flex-1">
+                                <input 
+                                    readOnly 
+                                    value={getShareLink()} 
+                                    className="w-full md:w-80 bg-stone-800/50 border border-stone-600 rounded-xl px-4 py-3 text-stone-300 text-sm outline-none font-mono"
+                                />
+                             </div>
+                             <div className="flex gap-2">
+                                <button 
+                                    onClick={copyToClipboard}
+                                    className={`px-5 py-2 font-bold rounded-xl transition shadow-md flex items-center gap-2 whitespace-nowrap
+                                        ${copied 
+                                            ? 'bg-green-600 text-white hover:bg-green-500' 
+                                            : 'bg-stone-200 text-stone-800 hover:bg-white'}`}
+                                >
+                                    {copied ? 'Copiato! ✓' : 'Copia Link'}
+                                </button>
+                                <a 
+                                    href={getShareLink()} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2 border border-stone-400/50 hover:bg-stone-500/30 rounded-xl text-stone-200 flex items-center justify-center transition"
+                                    title="Apri anteprima"
+                                >
+                                    ↗
+                                </a>
+                             </div>
+                        </div>
+                    </div>
+                    {/* ------------------------------------------------ */}
 
                     <div className="bg-stone-400/20 border border-stone-400/30 p-6 rounded-2xl mb-10 shadow-xl backdrop-blur-md">
                         <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-white">📤 Aggiungi Materiale</h3>
