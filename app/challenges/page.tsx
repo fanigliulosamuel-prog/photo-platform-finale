@@ -42,7 +42,7 @@ export default function ChallengesPage() {
   const [prevMonthWinner, setPrevMonthWinner] = useState<Photo | null>(null);
   const [currentMonthPhotos, setCurrentMonthPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Per il menu mobile
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   // --- CALCOLO DATE ATTUALI ---
@@ -160,10 +160,12 @@ export default function ChallengesPage() {
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
                 🌍 Mappa Community
             </Link>
-            {/* LINK ATTIVO */}
+            
+            {/* LINK ATTIVO: Questo ha lo sfondo e il bordo per indicare che siamo qui */}
             <Link href="/challenges" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>
                 🏆 Sfide del Mese
             </Link>
+            
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>
                 📘 Blog Storie
             </Link>
@@ -226,7 +228,7 @@ export default function ChallengesPage() {
                   </div>
               </div>
           ) : (
-             <div className="mb-12"></div> // Spaziatore vuoto
+             <div className="mb-12"></div>
           )}
 
           {/* --- SFIDA ATTIVA (MESE CORRENTE) --- */}
