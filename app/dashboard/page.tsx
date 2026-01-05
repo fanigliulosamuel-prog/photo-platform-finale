@@ -151,7 +151,7 @@ export default function Dashboard() {
           <div className="flex items-center mb-10">
             <button onClick={() => setIsMenuOpen(true)} className="text-white md:hidden text-3xl mr-4">☰</button>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato, {profile.username}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold mb-1 text-white drop-shadow-md">Bentornato/a, {profile.username}</h1>
               <p className="text-stone-200">Il tuo hub personale per gestire l'arte.</p>
             </div>
           </div>
