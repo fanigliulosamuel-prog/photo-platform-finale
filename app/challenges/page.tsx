@@ -14,16 +14,16 @@ const CHALLENGES_CALENDAR = [
     month: 11, // Dicembre 2025
     title: "Luci nella Notte",
     description: "Cattura l'atmosfera della città quando il sole tramonta. Neon, lampioni, scie luminose.",
-    category: "Sfida del Mese", // Categoria SPECIALE
-    status: "active",
-    prizeBadge: "✨ Maestro delle Luci" // Badge specifico
+    category: "Sfida del Mese",
+    status: "ended", // Segniamo come finita per logica
+    prizeBadge: "✨ Maestro delle Luci"
   },
   {
     month: 0, // Gennaio 2026
     title: "Il Calore del Freddo",
     description: "Racconta l'inverno attraverso i ritratti. Sciarpe, neve, espressioni che scaldano.",
     category: "Sfida del Mese",
-    status: "upcoming",
+    status: "active", // Questa diventa la nuova attiva
     prizeBadge: "❄️ Cuore d'Inverno"
   },
   {
@@ -36,8 +36,13 @@ const CHALLENGES_CALENDAR = [
   }
 ];
 
-const CURRENT_CHALLENGE = CHALLENGES_CALENDAR[0]; // La sfida di Dicembre
-const DEADLINE = new Date("2025-12-31T23:59:59");
+// Data di fine della sfida di DICEMBRE
+const PREVIOUS_DEADLINE = new Date("2025-12-31T23:59:59");
+// 24 Ore di tempo per il calcolo
+const CALCULATION_TIME = 24 * 60 * 60 * 1000; 
+
+// Data di fine della NUOVA sfida (Gennaio)
+const CURRENT_DEADLINE = new Date("2026-01-31T23:59:59");
 
 type Photo = {
   id: number;
@@ -52,44 +57,68 @@ export default function ChallengesPage() {
   const router = useRouter();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Stati della sfida: 'active' | 'calculating' | 'winner_announced'
+  const [challengeState, setChallengeState] = useState<'active' | 'calculating' | 'winner_announced'>('active');
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isEnded, setIsEnded] = useState(false);
+
+  // Determiniamo quale sfida mostrare in base allo stato
+  const activeChallengeData = challengeState === 'winner_announced' ? CHALLENGES_CALENDAR[1] : CHALLENGES_CALENDAR[0];
+  const activeDeadline = challengeState === 'winner_announced' ? CURRENT_DEADLINE : PREVIOUS_DEADLINE;
 
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date().getTime();
-      const distance = DEADLINE.getTime() - now;
+      const prevEnd = PREVIOUS_DEADLINE.getTime();
+      const calcEnd = prevEnd + CALCULATION_TIME;
 
-      if (distance < 0) {
-        clearInterval(timer);
-        setIsEnded(true);
+      if (now < prevEnd) {
+        // FASE 1: Sfida Dicembre ancora in corso
+        setChallengeState('active');
+        calculateTimeLeft(prevEnd - now);
+      } else if (now >= prevEnd && now < calcEnd) {
+        // FASE 2: Calcolo in corso (24 ore cuscinetto)
+        setChallengeState('calculating');
+        calculateTimeLeft(0); // Timer a zero
       } else {
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        });
+        // FASE 3: Calcolo finito -> Mostra vincitore e Nuova Sfida
+        setChallengeState('winner_announced');
+        // Ora il countdown punta alla fine di Gennaio
+        calculateTimeLeft(CURRENT_DEADLINE.getTime() - now);
       }
     }, 1000);
+
     return () => clearInterval(timer);
   }, []);
 
+  const calculateTimeLeft = (distance: number) => {
+    if (distance < 0) distance = 0;
+    setTimeLeft({
+      days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+      seconds: Math.floor((distance % (1000 * 60)) / 1000),
+    });
+  };
+
   useEffect(() => {
     async function fetchChallengePhotos() {
-      // Carica SOLO le foto della categoria speciale
+      // Carichiamo le foto (assumiamo siano quelle della sfida appena conclusa o in corso)
       const { data, error } = await supabase
         .from('photos')
         .select('*')
         .eq('category', 'Sfida del Mese') 
-        .order('likes', { ascending: false });
+        .order('likes', { ascending: false }); // Ordine per Like per determinare il vincitore
 
       if (!error) setPhotos(data || []);
       setLoading(false);
     }
     fetchChallengePhotos();
   }, []);
+
+  // Il vincitore è il primo della lista (più likes)
+  const winner = photos.length > 0 ? photos[0] : null;
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-stone-500 via-stone-600 to-stone-500 text-white relative overflow-hidden">
@@ -105,7 +134,7 @@ export default function ChallengesPage() {
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
-            {/* Aggiornato il testo del link */}
+            {/* Link Attivo */}
             <Link href="/challenges" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>🏆 Sfida del Mese</Link>
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
@@ -122,64 +151,84 @@ export default function ChallengesPage() {
       {isMenuOpen && <div className="fixed inset-0 bg-stone-900/80 z-40 md:hidden" onClick={() => setIsMenuOpen(false)}></div>}
 
       <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen relative z-10">
-        {/* Aggiornato titolo mobile */}
-        <div className="flex items-center mb-8 md:hidden"><button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">☰</button><h1 className={`${playfair.className} text-2xl font-bold text-white`}>Sfida del Mese</h1></div>
+        <div className="flex items-center mb-8 md:hidden"><button onClick={() => setIsMenuOpen(true)} className="text-white text-3xl mr-4">☰</button><h1 className={`${playfair.className} text-2xl font-bold text-white`}>Sfide</h1></div>
 
         <div className="relative z-10 p-8 md:p-12 text-center max-w-5xl mx-auto bg-stone-400/10 rounded-3xl border border-stone-400/20 backdrop-blur-xl shadow-2xl mb-12">
-          <span className="inline-block py-1 px-3 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest mb-6 border border-amber-500/30 animate-pulse">● Sfida Attiva</span>
-          <h1 className={`${playfair.className} text-4xl md:text-7xl font-bold text-white mb-4 drop-shadow-xl`}>{CURRENT_CHALLENGE.title}</h1>
-          <p className="text-lg text-stone-200 max-w-2xl mx-auto mb-8 leading-relaxed">{CURRENT_CHALLENGE.description}</p>
+          
+          {/* STATO: CALCOLO IN CORSO (24h) */}
+          {challengeState === 'calculating' && (
+             <div className="text-center py-10 animate-pulse">
+                <span className="text-5xl mb-4 block">⏳</span>
+                <h2 className="text-3xl font-bold text-amber-300 mb-2">Sfida Terminata!</h2>
+                <p className="text-stone-300">Stiamo calcolando i vincitori... torna tra poco!</p>
+             </div>
+          )}
 
-          {/* --- RIQUADRO PREMIO / BADGE --- */}
-          <div className="inline-block bg-stone-800/40 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-5 mb-10 max-w-xl animate-fadeIn hover:border-amber-400/50 transition-colors">
-            <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
-              <div className="bg-amber-500/20 p-4 rounded-full text-3xl shadow-[0_0_15px_rgba(245,158,11,0.3)]">🏆</div>
-              <div>
-                <h3 className="text-amber-300 font-bold text-lg">Premio: Badge Esclusivo "{CURRENT_CHALLENGE.prizeBadge}"</h3>
-                <p className="text-stone-300 text-sm mt-1 leading-snug">
-                  Il badge verrà assegnato <strong>automaticamente</strong> al vincitore. Inoltre, il vincitore e la sua foto avranno uno spazio dedicato durante la sfida del mese successivo.
-                </p>
-              </div>
-            </div>
-          </div>
-          {/* ------------------------------- */}
+          {/* STATO: NUOVA SFIDA + VINCITORE PASSATO */}
+          {challengeState === 'winner_announced' && (
+             <div className="mb-10">
+                {/* Banner Vincitore */}
+                {winner && (
+                  <div className="bg-gradient-to-r from-amber-500/20 to-purple-500/20 border border-amber-500/50 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                     <div className="w-full md:w-1/3 aspect-square rounded-xl overflow-hidden border-2 border-amber-400 relative group">
+                        <img src={winner.url} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
+                        <div className="absolute top-2 right-2 bg-amber-500 text-black font-bold px-3 py-1 rounded-full text-xs shadow-lg">🥇 Vincitore Dicembre</div>
+                     </div>
+                     <div className="text-left flex-1">
+                        <h3 className="text-amber-400 font-bold text-lg mb-1 uppercase tracking-wider">Hall of Fame</h3>
+                        <h2 className={`${playfair.className} text-3xl md:text-4xl font-bold text-white mb-2`}>{winner.title}</h2>
+                        <p className="text-stone-300 mb-4">by <span className="text-white font-bold">{winner.author_name}</span></p>
+                        <div className="inline-flex items-center gap-2 bg-amber-500 text-black px-4 py-2 rounded-full font-bold text-sm">
+                           <span>{CHALLENGES_CALENDAR[0].prizeBadge}</span>
+                           <span>Assegnato ✅</span>
+                        </div>
+                     </div>
+                  </div>
+                )}
+                <div className="h-px w-full bg-stone-600/50 mb-10"></div>
+             </div>
+          )}
 
-          {!isEnded ? (
+          {/* CONTENUTO SFIDA ATTIVA (O Nuova o Vecchia se non scaduta) */}
+          {(challengeState === 'active' || challengeState === 'winner_announced') && (
             <>
+                <span className="inline-block py-1 px-3 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-widest mb-6 border border-amber-500/30 animate-pulse">● Sfida Attiva</span>
+                <h1 className={`${playfair.className} text-4xl md:text-7xl font-bold text-white mb-4 drop-shadow-xl`}>{activeChallengeData.title}</h1>
+                <p className="text-lg text-stone-200 max-w-2xl mx-auto mb-8 leading-relaxed">{activeChallengeData.description}</p>
+
+                {/* RIQUADRO PREMIO */}
+                <div className="inline-block bg-stone-800/40 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-5 mb-10 max-w-xl hover:border-amber-400/50 transition-colors">
+                    <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+                    <div className="bg-amber-500/20 p-4 rounded-full text-3xl shadow-[0_0_15px_rgba(245,158,11,0.3)]">🏆</div>
+                    <div>
+                        <h3 className="text-amber-300 font-bold text-lg">Premio: Badge "{activeChallengeData.prizeBadge}"</h3>
+                        <p className="text-stone-300 text-sm mt-1 leading-snug">
+                        Il badge verrà assegnato <strong>automaticamente</strong> al vincitore allo scadere del timer.
+                        </p>
+                    </div>
+                    </div>
+                </div>
+
                 <div className="flex justify-center gap-3 md:gap-6 mb-10">
-                {['Giorni', 'Ore', 'Minuti', 'Secondi'].map((label, i) => {
-                    const values = [timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds];
-                    return (<div key={label} className="text-center"><div className="w-14 h-14 md:w-20 md:h-20 bg-stone-800/50 backdrop-blur-md rounded-xl border border-stone-500/30 flex items-center justify-center text-xl md:text-3xl font-bold text-white shadow-inner">{values[i]}</div><p className="text-[10px] text-stone-400 uppercase mt-2 font-bold tracking-wider">{label}</p></div>);
-                })}
+                    {['Giorni', 'Ore', 'Minuti', 'Secondi'].map((label, i) => {
+                        const values = [timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds];
+                        return (<div key={label} className="text-center"><div className="w-14 h-14 md:w-20 md:h-20 bg-stone-800/50 backdrop-blur-md rounded-xl border border-stone-500/30 flex items-center justify-center text-xl md:text-3xl font-bold text-white shadow-inner">{values[i]}</div><p className="text-[10px] text-stone-400 uppercase mt-2 font-bold tracking-wider">{label}</p></div>);
+                    })}
                 </div>
                 
-                <Link href={`/upload?category=${encodeURIComponent(CURRENT_CHALLENGE.category)}`}>
-                  <button className="px-8 py-3 md:px-12 md:py-4 bg-white text-stone-900 text-lg font-bold rounded-full hover:scale-105 transition transform shadow-xl hover:shadow-amber-500/20">Partecipa Ora 📸</button>
+                <Link href={`/upload?category=${encodeURIComponent("Sfida del Mese")}`}>
+                <button className="px-8 py-3 md:px-12 md:py-4 bg-white text-stone-900 text-lg font-bold rounded-full hover:scale-105 transition transform shadow-xl hover:shadow-amber-500/20">Partecipa Ora 📸</button>
                 </Link>
-                <p className="text-stone-400 text-xs mt-4">La categoria verrà impostata automaticamente su <strong>"{CURRENT_CHALLENGE.category}"</strong>.</p>
+                <p className="text-stone-400 text-xs mt-4">La categoria verrà impostata automaticamente su <strong>"Sfida del Mese"</strong>.</p>
             </>
-          ) : (
-             <div className="text-center py-10"><h2 className="text-3xl font-bold text-amber-300">Sfida Terminata!</h2><p className="text-stone-300">Calcolo vincitori in corso...</p></div>
           )}
         </div>
 
-        {/* --- CALENDARIO SFIDE --- */}
-        <div className="max-w-5xl mx-auto mb-16">
-            <h2 className="text-2xl font-bold mb-6 text-stone-100 text-center">📅 Prossime Sfide</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {CHALLENGES_CALENDAR.map((challenge, index) => (
-                    <div key={index} className={`p-6 rounded-2xl border ${challenge.status === 'active' ? 'bg-amber-900/20 border-amber-500/50' : 'bg-stone-800/40 border-stone-600/30 opacity-70'}`}>
-                        <span className="text-xs font-bold uppercase tracking-wider text-stone-400">{index === 0 ? "Dicembre" : index === 1 ? "Gennaio" : "Febbraio"}</span>
-                        <h3 className="text-xl font-bold text-white mt-2 mb-2">{challenge.title}</h3>
-                        <p className="text-sm text-stone-300 line-clamp-2">{challenge.description}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-
-        {/* Classifica */}
+        {/* CLASSIFICA (Sempre visibile per trasparenza) */}
         <div className="relative z-10 max-w-7xl mx-auto p-8 bg-stone-800/50 backdrop-blur-xl rounded-t-[3rem] border-t border-stone-500/30 min-h-[500px]">
-            <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3 text-stone-100">🏆 Classifica Provvisoria</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3 text-stone-100">
+                {challengeState === 'winner_announced' ? '🏆 Classifica Finale (Dicembre)' : '📊 Classifica Provvisoria'}
+            </h2>
             {loading ? <p className="text-center text-stone-400">Caricamento...</p> : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {photos.map((photo, index) => (
