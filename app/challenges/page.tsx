@@ -31,7 +31,7 @@ type Photo = {
   author_name: string;
   url: string;
   likes: number;
-  user_id: string; // FONDAMENTALE per assegnare il badge
+  user_id: string; 
   created_at: string;
 }
 
@@ -76,7 +76,6 @@ export default function ChallengesPage() {
   // --- FUNZIONE PER ASSEGNARE IL BADGE ---
   const assignBadgeToWinner = async (winnerId: string, badgeName: string) => {
     try {
-        // 1. Prendi i badge attuali dell'utente
         const { data: profile } = await supabase
             .from('profiles')
             .select('badges')
@@ -85,7 +84,6 @@ export default function ChallengesPage() {
 
         const currentBadges: string[] = profile?.badges || [];
 
-        // 2. Se NON ha già il badge, aggiungilo
         if (!currentBadges.includes(badgeName)) {
             const newBadges = [...currentBadges, badgeName];
             
@@ -103,7 +101,7 @@ export default function ChallengesPage() {
     }
   };
 
-  // --- FETCH DATI E ASSEGNAZIONE ---
+  // --- FETCH DATI ---
   useEffect(() => {
     async function fetchData() {
       try {
@@ -126,7 +124,6 @@ export default function ChallengesPage() {
         
         if (winnerData) {
             setPrevMonthWinner(winnerData);
-            // --- QUI SCATTA L'ASSEGNAZIONE AUTOMATICA ---
             if (winnerData.user_id) {
                 assignBadgeToWinner(winnerData.user_id, prevChallenge.prizeBadge);
             }
@@ -170,6 +167,7 @@ export default function ChallengesPage() {
       <div className="absolute inset-0 z-0 opacity-5 pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-400/20 rounded-full blur-[120px] pointer-events-none"></div>
 
+      {/* --- SIDEBAR --- */}
       <aside className={`fixed md:relative w-64 bg-stone-700/40 backdrop-blur-xl border-r border-stone-500/30 flex flex-col p-6 h-full transition-transform duration-300 z-50 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
           <h2 className="text-2xl font-bold text-white mb-10 tracking-tight">Photo Platform</h2>
           <button onClick={() => setIsMenuOpen(false)} className="absolute top-4 right-4 md:hidden text-stone-300 hover:text-white text-xl">✕</button>
@@ -180,10 +178,10 @@ export default function ChallengesPage() {
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
             
-            {/* --- LINK MODIFICATO: ORA AL SINGOLARE --- */}
+            {/* --- PULSANTE STANDARD: SFIDA DEL MESE --- */}
             <Link 
                 href="/challenges" 
-                className="flex items-center gap-3 p-3 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 font-bold hover:bg-amber-400/20 transition-all shadow-[0_0_15px_rgba(251,191,36,0.2)]" 
+                className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" 
                 onClick={() => setIsMenuOpen(false)}
             >
                 🏆 Sfida del Mese
