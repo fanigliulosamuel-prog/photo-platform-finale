@@ -179,7 +179,16 @@ export default function ChallengesPage() {
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Esplora</p>
             <Link href="/explore" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📷 Galleria Pubblica</Link>
             <Link href="/community" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>🌍 Mappa Community</Link>
-            <Link href="/challenges" className="flex items-center gap-3 p-3 bg-stone-100/10 border border-stone-400/30 rounded-xl text-white font-medium shadow-lg" onClick={() => setIsMenuOpen(false)}>🏆 Sfide del Mese</Link>
+            
+            {/* --- LINK MODIFICATO: ORA AL SINGOLARE --- */}
+            <Link 
+                href="/challenges" 
+                className="flex items-center gap-3 p-3 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 font-bold hover:bg-amber-400/20 transition-all shadow-[0_0_15px_rgba(251,191,36,0.2)]" 
+                onClick={() => setIsMenuOpen(false)}
+            >
+                🏆 Sfida del Mese
+            </Link>
+            
             <Link href="/blog" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📘 Blog Storie</Link>
             <p className="text-xs text-stone-300 font-bold uppercase tracking-wider mt-4 mb-2 px-2">Strumenti</p>
             <Link href="/upload" className="flex items-center gap-3 p-3 text-stone-200 hover:bg-white/10 hover:text-white rounded-xl transition" onClick={() => setIsMenuOpen(false)}>📤 Carica Foto</Link>
