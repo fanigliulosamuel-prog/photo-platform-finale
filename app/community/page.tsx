@@ -22,7 +22,7 @@ export default function CommunityPage() {
   
   // --- STATI DI RICERCA ---
   const [searchCity, setSearchCity] = useState("");
-  const [searchName, setSearchName] = useState(""); // <--- Nuovo stato per il nome
+  const [searchName, setSearchName] = useState(""); 
   
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -44,6 +44,10 @@ export default function CommunityPage() {
     if (searchName.trim() !== "") {
         query = query.ilike('username', `%${searchName}%`);
     }
+
+    // --- MODIFICA: ORDINAMENTO ALFABETICO (A-Z) ---
+    // Ordina i risultati per 'username' in ordine ascendente
+    query = query.order('username', { ascending: true });
 
     const { data, error } = await query;
     if (!error) {
