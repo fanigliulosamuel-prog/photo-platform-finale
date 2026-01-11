@@ -20,7 +20,7 @@ type Profile = {
   bio: string;
   city: string;
   avatar_url: string;
-  badges?: string; // <--- MODIFICATO: Ora corrisponde al nome della tua colonna su Supabase
+  badges?: string; 
 }
 
 type Post = {
